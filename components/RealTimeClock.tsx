@@ -9,7 +9,7 @@ export function RealTimeClock() {
     const updateTime = () => {
       const date = new Date()
       const options: Intl.DateTimeFormatOptions = {
-        timeZone: "Asia/Kolkata",
+        timeZone: "Asia/Jakarta",
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
@@ -26,7 +26,7 @@ export function RealTimeClock() {
 
   return (
     <div className="flex items-center text-sm text-neutral-400">
-      <span>{time} IST</span>
+      <span>{time} WIB (GMT+7)</span>
     </div>
   )
 }
