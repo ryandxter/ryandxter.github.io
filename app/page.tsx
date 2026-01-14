@@ -116,7 +116,7 @@ export default function Portfolio() {
     <main className="relative flex flex-col items-center bg-transparent min-h-screen font-sans">
       <div
         id="main-container"
-        className="w-full min-h-screen bg-transparent z-10 px-4 sm:px-6 md:px-8 py-6 sm:py-8 mb-[1500px] transition-all duration-500 ease-in-out shadow-[0_0_20px_rgba(0,0,0,0.1)]"
+        className="w-full min-h-screen bg-transparent z-10 px-4 sm:px-6 md:px-8 py-6 sm:py-8 mb-0 transition-all duration-500 ease-in-out shadow-[0_0_20px_rgba(0,0,0,0.1)]"
       >
         <Card className="border-none bg-transparent mb-8 sm:mb-16 w-full max-w-[400px] mx-auto shadow-none">
           <CardContent className="flex flex-col gap-8 sm:gap-12 p-0 sm:p-4">
