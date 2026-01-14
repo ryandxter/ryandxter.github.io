@@ -7,11 +7,13 @@ export async function GET() {
     const { data, error } = await supabase.from("portfolio_info").select("*").single()
 
     if (error) {
+      console.error("GET /api/portfolio supabase error:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json(data)
   } catch (error) {
+    console.error("GET /api/portfolio unexpected error:", error)
     return NextResponse.json({ error: "Failed to fetch portfolio info" }, { status: 500 })
   }
 }
@@ -85,7 +87,9 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(data)
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update portfolio info" }, { status: 500 })
+    console.error("PUT /api/portfolio unexpected error:", error)
+    const message = error instanceof Error ? error.message : String(error)
+    return NextResponse.json({ error: message || "Failed to update portfolio info" }, { status: 500 })
   }
 }
 
