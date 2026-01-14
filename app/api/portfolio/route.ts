@@ -19,24 +19,35 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const body = await request.json()
-    const { name, career_name, about, email, availability } = body
+    const { name, title, email, location, bio } = body
 
-    if (!name || !career_name || !about || !email || !availability) {
+    if (!name || !title || !email || !location || !bio) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
     const supabase = await createClient()
+    
+    // Get existing record id
+    const { data: existingData, error: fetchError } = await supabase
+      .from("portfolio_info")
+      .select("id")
+      .single()
+
+    if (fetchError) {
+      return NextResponse.json({ error: fetchError.message }, { status: 500 })
+    }
+
     const { data, error } = await supabase
       .from("portfolio_info")
       .update({
         name,
-        career_name,
-        about,
+        title,
         email,
-        availability,
+        location,
+        bio,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", (await supabase.from("portfolio_info").select("id").single()).data.id)
+      .eq("id", existingData.id)
       .select()
       .single()
 
@@ -49,3 +60,4 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Failed to update portfolio info" }, { status: 500 })
   }
 }
+

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
-import { PortfolioInfoForm } from "@/components/PortfolioInfoForm"
+import { PersonalInfoForm } from "@/components/PersonalInfoForm"
 import { SocialLinksForm } from "@/components/SocialLinksForm"
 import { GalleryImagesForm } from "@/components/GalleryImagesForm"
 import { ExperienceForm } from "@/components/ExperienceForm"
@@ -45,6 +45,7 @@ export default function AdminDashboard() {
   const [isLoadingSocial, setIsLoadingSocial] = useState(true)
   const [isLoadingGallery, setIsLoadingGallery] = useState(true)
   const [isSavingPortfolio, setIsSavingPortfolio] = useState(false)
+  const [isSeeding, setIsSeeding] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const { isAuthenticated, authenticate, logout, showWarning } = useAdminSession()
@@ -160,6 +161,26 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleSeedData = async () => {
+    setIsSeeding(true)
+    setError(null)
+    try {
+      const response = await fetch("/api/seed", { method: "POST" })
+      if (!response.ok) throw new Error("Failed to sync data")
+      
+      // Refresh all data after seeding
+      await Promise.all([
+        fetchExperiences(),
+        fetchSocialLinks(),
+        fetchGalleryImages()
+      ])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to sync data")
+    } finally {
+      setIsSeeding(false)
+    }
+  }
+
   const editingExperience = experiences.find((exp) => exp.id === editingExperienceId)
 
   useEffect(() => {
@@ -191,6 +212,13 @@ export default function AdminDashboard() {
                 <Link href="/">
                   <Button variant="outline">Back to Portfolio</Button>
                 </Link>
+                <Button 
+                  variant="outline" 
+                  onClick={handleSeedData}
+                  disabled={isSeeding}
+                >
+                  {isSeeding ? "Syncing..." : "Sync from CV Data"}
+                </Button>
                 <Button variant="destructive" onClick={logout}>
                   Logout
                 </Button>
@@ -209,7 +237,7 @@ export default function AdminDashboard() {
               </TabsList>
 
               <TabsContent value="portfolio" className="mt-6">
-                <PortfolioInfoForm onSubmit={handleSavePortfolioInfo} isLoading={isSavingPortfolio} />
+                <PersonalInfoForm />
               </TabsContent>
 
               <TabsContent value="social" className="mt-6">

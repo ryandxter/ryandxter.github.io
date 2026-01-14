@@ -46,10 +46,10 @@ export interface CVData {
 
 export const cvData: CVData = {
   personal: {
-    name: "Yadwinder Singh",
-    title: "Freelance Product Designer",
-    email: "yadwinder.design@gmail.com",
-    location: "India",
+    name: "Riansyah Rizky Poetra",
+    title: "R&D Photography Videography - System",
+    email: "ryndxtr@gmail.com",
+    location: "Indonesia",
     bio: "Passionate product designer with 5+ years of experience creating intuitive and beautiful digital experiences. Specialized in UI/UX design, design systems, and user research.",
   },
   social: [
