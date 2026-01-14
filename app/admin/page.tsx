@@ -47,7 +47,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null)
 
   const { isAuthenticated, authenticate, logout, showWarning } = useAdminSession()
-  const [showPasswordModal, setShowPasswordModal] = useState(!isAuthenticated)
+  const [showPasswordModal, setShowPasswordModal] = useState(true)
   const [authError, setAuthError] = useState<string | null>(null)
 
   const fetchExperiences = async () => {
@@ -162,10 +162,6 @@ export default function AdminDashboard() {
   const editingExperience = experiences.find((exp) => exp.id === editingExperienceId)
 
   useEffect(() => {
-    setShowPasswordModal(!isAuthenticated)
-  }, [isAuthenticated])
-
-  useEffect(() => {
     if (isAuthenticated) {
       fetchExperiences()
       fetchSocialLinks()
@@ -175,117 +171,122 @@ export default function AdminDashboard() {
 
   return (
     <main className="min-h-screen bg-white p-4 sm:p-8">
-      {showWarning && (
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 flex items-center justify-between">
-          <span>Your session will expire in 30 seconds due to inactivity.</span>
-          <Button variant="outline" size="sm" onClick={logout}>
-            Logout Now
-          </Button>
-        </div>
-      )}
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-neutral-900">Portfolio Admin Dashboard</h1>
-          <div className="flex gap-2">
-            <Link href="/">
-              <Button variant="outline">Back to Portfolio</Button>
-            </Link>
-            <Button variant="destructive" onClick={logout}>
-              Logout
-            </Button>
-          </div>
-        </div>
+      <PasswordModal isOpen={!isAuthenticated} onAuthenticate={handlePasswordSubmit} onError={setAuthError} />
 
-        {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-700">{error}</div>}
-
-        <Tabs defaultValue="portfolio" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="portfolio">Portfolio Info</TabsTrigger>
-            <TabsTrigger value="social">Social Links</TabsTrigger>
-            <TabsTrigger value="gallery">Gallery</TabsTrigger>
-            <TabsTrigger value="experience">Experience</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="portfolio" className="mt-6">
-            <PortfolioInfoForm onSubmit={handleSavePortfolioInfo} isLoading={isSavingPortfolio} />
-          </TabsContent>
-
-          <TabsContent value="social" className="mt-6">
-            {isLoadingSocial ? (
-              <p className="text-center py-4">Loading social links...</p>
-            ) : (
-              <SocialLinksForm links={socialLinks} onRefresh={fetchSocialLinks} />
-            )}
-          </TabsContent>
-
-          <TabsContent value="gallery" className="mt-6">
-            {isLoadingGallery ? (
-              <p className="text-center py-4">Loading gallery images...</p>
-            ) : (
-              <GalleryImagesForm images={galleryImages} onRefresh={fetchGalleryImages} />
-            )}
-          </TabsContent>
-
-          <TabsContent value="experience" className="mt-6">
-            <div className="grid gap-8">
-              <ExperienceForm
-                onSubmit={(data) =>
-                  editingExperienceId ? handleUpdateExperience(editingExperienceId, data) : handleAddExperience(data)
-                }
-                initialData={editingExperience}
-                submitButtonText={editingExperienceId ? "Update Experience" : "Add Experience"}
-              />
-
-              <div>
-                <h2 className="text-xl font-semibold text-neutral-900 mb-4">Current Experiences</h2>
-                {isLoadingExperiences ? (
-                  <p className="text-neutral-600">Loading experiences...</p>
-                ) : experiences.length === 0 ? (
-                  <p className="text-neutral-600">No experiences yet. Add one to get started!</p>
-                ) : (
-                  <div className="grid gap-4">
-                    {experiences.map((exp) => (
-                      <Card key={exp.id}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex-1">
-                              <div className="flex items-baseline gap-2 mb-2">
-                                <h3 className="text-lg font-semibold text-neutral-900">{exp.company}</h3>
-                                <span className="text-sm text-neutral-500">{exp.period}</span>
-                              </div>
-                              <p className="text-neutral-700 text-sm">{exp.description}</p>
-                            </div>
-                            <div className="flex gap-2 ml-4">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setEditingExperienceId(exp.id)}
-                                disabled={editingExperienceId !== null}
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteExperience(exp.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+      {isAuthenticated && (
+        <>
+          {showWarning && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 flex items-center justify-between">
+              <span>Your session will expire in 30 seconds due to inactivity.</span>
+              <Button variant="outline" size="sm" onClick={logout}>
+                Logout Now
+              </Button>
+            </div>
+          )}
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-3xl font-bold text-neutral-900">Portfolio Admin Dashboard</h1>
+              <div className="flex gap-2">
+                <Link href="/">
+                  <Button variant="outline">Back to Portfolio</Button>
+                </Link>
+                <Button variant="destructive" onClick={logout}>
+                  Logout
+                </Button>
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-      {!isAuthenticated && (
-        <PasswordModal isOpen={showPasswordModal} onAuthenticate={handlePasswordSubmit} onError={setAuthError} />
+
+            {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-700">{error}</div>}
+
+            <Tabs defaultValue="portfolio" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="portfolio">Portfolio Info</TabsTrigger>
+                <TabsTrigger value="social">Social Links</TabsTrigger>
+                <TabsTrigger value="gallery">Gallery</TabsTrigger>
+                <TabsTrigger value="experience">Experience</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="portfolio" className="mt-6">
+                <PortfolioInfoForm onSubmit={handleSavePortfolioInfo} isLoading={isSavingPortfolio} />
+              </TabsContent>
+
+              <TabsContent value="social" className="mt-6">
+                {isLoadingSocial ? (
+                  <p className="text-center py-4">Loading social links...</p>
+                ) : (
+                  <SocialLinksForm links={socialLinks} onRefresh={fetchSocialLinks} />
+                )}
+              </TabsContent>
+
+              <TabsContent value="gallery" className="mt-6">
+                {isLoadingGallery ? (
+                  <p className="text-center py-4">Loading gallery images...</p>
+                ) : (
+                  <GalleryImagesForm images={galleryImages} onRefresh={fetchGalleryImages} />
+                )}
+              </TabsContent>
+
+              <TabsContent value="experience" className="mt-6">
+                <div className="grid gap-8">
+                  <ExperienceForm
+                    onSubmit={(data) =>
+                      editingExperienceId
+                        ? handleUpdateExperience(editingExperienceId, data)
+                        : handleAddExperience(data)
+                    }
+                    initialData={editingExperience}
+                    submitButtonText={editingExperienceId ? "Update Experience" : "Add Experience"}
+                  />
+
+                  <div>
+                    <h2 className="text-xl font-semibold text-neutral-900 mb-4">Current Experiences</h2>
+                    {isLoadingExperiences ? (
+                      <p className="text-neutral-600">Loading experiences...</p>
+                    ) : experiences.length === 0 ? (
+                      <p className="text-neutral-600">No experiences yet. Add one to get started!</p>
+                    ) : (
+                      <div className="grid gap-4">
+                        {experiences.map((exp) => (
+                          <Card key={exp.id}>
+                            <CardContent className="pt-6">
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex-1">
+                                  <div className="flex items-baseline gap-2 mb-2">
+                                    <h3 className="text-lg font-semibold text-neutral-900">{exp.company}</h3>
+                                    <span className="text-sm text-neutral-500">{exp.period}</span>
+                                  </div>
+                                  <p className="text-neutral-700 text-sm">{exp.description}</p>
+                                </div>
+                                <div className="flex gap-2 ml-4">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setEditingExperienceId(exp.id)}
+                                    disabled={editingExperienceId !== null}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteExperience(exp.id)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </>
       )}
     </main>
   )

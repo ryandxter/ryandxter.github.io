@@ -1,46 +1,49 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useState, useCallback } from "react"
 
 const CLICK_TARGET = 10
-const RESET_TIMEOUT = 2000 // Reset after 2 seconds of inactivity
+const RESET_TIMEOUT = 2000
 
-export function useAdminEasterEgg(onUnlock: () => void) {
+export function useAdminEasterEgg(elementRef: React.RefObject<HTMLElement>, onUnlock: () => void) {
   const [clickCount, setClickCount] = useState(0)
   const [resetTimer, setResetTimer] = useState<NodeJS.Timeout | null>(null)
 
-  const handleBlankAreaClick = useCallback(
-    (e: MouseEvent) => {
-      // Only count clicks on completely empty areas (not on any interactive element)
-      const target = e.target as HTMLElement
-      if (target.tagName === "BODY" || (target.tagName === "DIV" && !target.className)) {
-        const newCount = clickCount + 1
+  const handleElementClick = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      e.preventDefault()
+      e.stopPropagation()
 
-        // Reset timer
-        if (resetTimer) clearTimeout(resetTimer)
-        const timer = setTimeout(() => {
-          setClickCount(0)
-        }, RESET_TIMEOUT)
-        setResetTimer(timer)
+      const newCount = clickCount + 1
 
-        setClickCount(newCount)
+      if (resetTimer) clearTimeout(resetTimer)
+      const timer = setTimeout(() => {
+        setClickCount(0)
+      }, RESET_TIMEOUT)
+      setResetTimer(timer)
 
-        if (newCount === CLICK_TARGET) {
-          onUnlock()
-          setClickCount(0)
-        }
+      setClickCount(newCount)
+
+      if (newCount === CLICK_TARGET) {
+        onUnlock()
+        setClickCount(0)
       }
     },
     [clickCount, resetTimer, onUnlock],
   )
 
   useEffect(() => {
-    window.addEventListener("click", handleBlankAreaClick)
+    const element = elementRef.current
+    if (!element) return
+
+    element.addEventListener("click", handleElementClick as any)
     return () => {
-      window.removeEventListener("click", handleBlankAreaClick)
+      element.removeEventListener("click", handleElementClick as any)
       if (resetTimer) clearTimeout(resetTimer)
     }
-  }, [handleBlankAreaClick, resetTimer])
+  }, [handleElementClick, resetTimer, elementRef])
 
   return { clickCount, targetClicks: CLICK_TARGET }
 }

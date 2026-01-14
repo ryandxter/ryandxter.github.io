@@ -1,13 +1,18 @@
 "use client"
 
+import type React from "react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowUpRight } from "lucide-react"
 import { RealTimeClock } from "@/components/RealTimeClock"
 import { Ticker } from "@/components/Ticker"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useAdminEasterEgg } from "@/hooks/useAdminEasterEgg"
 import { useRouter } from "next/navigation"
+import { PasswordModal } from "@/components/PasswordModal"
+import { useAdminSession } from "@/hooks/useAdminSession"
+import { setAdminSession } from "@/lib/admin-session"
 
 interface PortfolioInfo {
   id: string
@@ -41,8 +46,13 @@ export default function Portfolio() {
   const [isLoadingSocial, setIsLoadingSocial] = useState(true)
   const router = useRouter()
 
-  const { clickCount, targetClicks } = useAdminEasterEgg(() => {
-    router.push("/admin")
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const { isAuthenticated, authenticate, logout } = useAdminSession()
+  const headerRef = useRef<HTMLDivElement>(null)
+
+  const { clickCount, targetClicks } = useAdminEasterEgg(headerRef, () => {
+    setShowPasswordModal(true)
   })
 
   useEffect(() => {
@@ -94,6 +104,14 @@ export default function Portfolio() {
     }
   }
 
+  const handlePasswordSubmit = (token: string) => {
+    const expiresAt = Date.now() + 2 * 60 * 1000
+    setAdminSession(token, expiresAt)
+    authenticate(token)
+    setShowPasswordModal(false)
+    setPasswordError(null)
+  }
+
   return (
     <main className="relative flex flex-col items-center bg-white min-h-screen font-sans">
       <div
@@ -102,7 +120,12 @@ export default function Portfolio() {
       >
         <Card className="border-none bg-transparent mb-8 sm:mb-16 w-full max-w-[400px] mx-auto shadow-none">
           <CardContent className="flex flex-col gap-8 sm:gap-12 p-0 sm:p-4">
-            <Header isLoaded={isLoaded} portfolioInfo={portfolioInfo} isLoadingPortfolio={isLoadingPortfolio} />
+            <Header
+              isLoaded={isLoaded}
+              portfolioInfo={portfolioInfo}
+              isLoadingPortfolio={isLoadingPortfolio}
+              headerRef={headerRef}
+            />
             <Description isLoaded={isLoaded} portfolioInfo={portfolioInfo} isLoadingPortfolio={isLoadingPortfolio} />
             <CTAButtons
               isLoaded={isLoaded}
@@ -117,6 +140,7 @@ export default function Portfolio() {
         </Card>
       </div>
       <Ticker />
+      <PasswordModal isOpen={showPasswordModal} onAuthenticate={handlePasswordSubmit} onError={setPasswordError} />
     </main>
   )
 }
@@ -125,17 +149,20 @@ function Header({
   isLoaded,
   portfolioInfo,
   isLoadingPortfolio,
+  headerRef,
 }: {
   isLoaded: boolean
   portfolioInfo: PortfolioInfo | null
   isLoadingPortfolio: boolean
+  headerRef: React.RefObject<HTMLDivElement>
 }) {
   return (
     <header
-      className={`flex flex-col gap-1.5 transition-all duration-500 ease-out ${
+      ref={headerRef}
+      className={`flex flex-col gap-1.5 transition-all duration-500 ease-out select-none cursor-pointer ${
         isLoaded ? "opacity-100 blur-none translate-y-0" : "opacity-0 blur-[4px] translate-y-2"
       }`}
-      style={{ transitionDelay: "100ms" }}
+      style={{ transitionDelay: "100ms", userSelect: "none" }}
     >
       {isLoadingPortfolio ? (
         <>
