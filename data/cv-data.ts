@@ -1,49 +1,10 @@
 export interface CVData {
   personal: {
-    name: string
-    title: string
-    email: string
-    phone?: string
-    location?: string
-    bio: string
-  }
-  social: {
-    label: string
-    href: string
-    value?: string
-  }[]
-  experience: {
-    company: string
-    position: string
-    period: string
-    description: string
-    highlights?: string[]
-  }[]
-  education: {
-    school: string
-    degree: string
-    field: string
-    graduationYear: number
-    gpa?: string
-  }[]
-  skills: {
-    category: string
-    items: {
-      name: string
-      level: number // 0-100
-      icon?: string
-    }[]
-  }[]
-  // projects removed: not used for SEO/meta
-}
-
-export const cvData: CVData = {
-  personal: {
-    name: "Riansyah Rizky Poetra",
-    title: "R&D Photography Videography - System",
-    email: "ryndxtr@gmail.com",
-    location: "Indonesia",
-    bio: "Passionate product designer with 5+ years of experience creating intuitive and beautiful digital experiences. Specialized in UI/UX design, design systems, and user research.",
+    name: "Test",
+    title: "T",
+    email: "test@example.com",
+    location: "Nowhere",
+    bio: "x",
   },
   social: [
     {
