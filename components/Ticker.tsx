@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import { Card } from "@/components/ui/card"
+import BackgroundPaths from "@/components/kokonutui/background-paths"
 import Image from "next/image"
 import React from "react"
 
@@ -167,8 +168,11 @@ export function Ticker() {
       }`}
       style={{ opacity }}
     >
-      <Card className="w-full h-full bg-[#fafafa] p-2 sm:p-4 lg:p-6 overflow-hidden">
-        <div className="w-full h-full flex flex-col justify-between gap-4 md:gap-6 lg:gap-9">
+      <Card className="w-full h-full bg-[#fafafa] p-2 sm:p-4 lg:p-6 overflow-hidden relative">
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <BackgroundPaths backgroundOnly />
+        </div>
+        <div className="w-full h-full flex flex-col justify-between gap-4 md:gap-6 lg:gap-9 relative z-10">
           {Object.entries(tickerImages)
             .sort(([rowA], [rowB]) => {
               const numA = Number.parseInt(rowA.replace("row", ""))

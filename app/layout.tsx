@@ -4,7 +4,6 @@ import type React from "react"
 import type { Metadata } from "next"
 import { DisableContextMenu } from "@/components/DisableContextMenu"
 import { cvData } from "@/data/cv-data"
-import BackgroundPaths from "@/components/kokonutui/background-paths"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -54,10 +53,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="font-sans">
         <DisableContextMenu />
-          <div className="relative">
-            <BackgroundPaths backgroundOnly />
-            <div className="relative z-10">{children}</div>
-          </div>
+        {children}
       </body>
     </html>
   )
