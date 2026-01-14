@@ -1,0 +1,19 @@
+{
+  "name": "my-project",
+  "version": "1.0.0",
+  "dependencies": {
+    "@emotion/is-prop-valid": "latest",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "embla-carousel-react": "latest",
+    "framer-motion": "^10.16.4",
+    "lucide-react": "^0.454.0",
+    "tailwind-merge": "^2.5.5",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "postcss": "^8.5",
+    "typescript": "^5"
+  }
+}
