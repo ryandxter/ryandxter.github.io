@@ -34,14 +34,7 @@ export interface CVData {
       icon?: string
     }[]
   }[]
-  projects: {
-    title: string
-    description: string
-    image?: string
-    technologies: string[]
-    link?: string
-    github?: string
-  }[]
+  // projects removed: not used for SEO/meta
 }
 
 export const cvData: CVData = {
@@ -107,26 +100,5 @@ export const cvData: CVData = {
       ],
     },
   ],
-  projects: [
-    {
-      title: "AI Productivity Suite",
-      description: "A comprehensive productivity tool powered by AI, helping teams manage projects more efficiently.",
-      technologies: ["React", "TypeScript", "Tailwind CSS", "Node.js"],
-      link: "https://example.com",
-      github: "https://github.com",
-      image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop",
-    },
-    {
-      title: "Design System",
-      description: "A comprehensive design system for enterprise applications with 200+ components.",
-      technologies: ["Figma", "React Storybook", "CSS-in-JS"],
-      link: "https://example.com",
-    },
-    {
-      title: "Mobile Shopping App",
-      description: "E-commerce mobile application with intuitive shopping experience and seamless checkout.",
-      technologies: ["React Native", "Firebase", "Stripe"],
-      link: "https://example.com",
-    },
-  ],
+  // projects removed
 }
