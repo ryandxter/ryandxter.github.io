@@ -8,7 +8,13 @@ function hashPassword(password: string): string {
 }
 
 export function verifyPassword(password: string, hash: string): boolean {
-  return hashPassword(password) === hash
+  const calculatedHash = hashPassword(password)
+  console.log("verifyPassword debug:")
+  console.log("  Input password:", password)
+  console.log("  Calculated hash:", calculatedHash)
+  console.log("  Stored hash:", hash)
+  console.log("  Match:", calculatedHash === hash)
+  return calculatedHash === hash
 }
 
 export function getInitialPasswordHash(): string {
@@ -18,3 +24,5 @@ export function getInitialPasswordHash(): string {
 export function hashNewPassword(password: string): string {
   return hashPassword(password)
 }
+
+export const DEFAULT_ADMIN_PASSWORD = DEFAULT_PASSWORD

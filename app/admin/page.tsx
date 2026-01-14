@@ -8,6 +8,7 @@ import { PortfolioInfoForm } from "@/components/PortfolioInfoForm"
 import { SocialLinksForm } from "@/components/SocialLinksForm"
 import { GalleryImagesForm } from "@/components/GalleryImagesForm"
 import { ExperienceForm } from "@/components/ExperienceForm"
+import { FaviconForm } from "@/components/FaviconForm"
 import { Card, CardContent } from "@/components/ui/card"
 import { Trash2, Edit2 } from "lucide-react"
 import { PasswordModal } from "@/components/PasswordModal"
@@ -199,11 +200,12 @@ export default function AdminDashboard() {
             {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded text-red-700">{error}</div>}
 
             <Tabs defaultValue="portfolio" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="portfolio">Portfolio Info</TabsTrigger>
                 <TabsTrigger value="social">Social Links</TabsTrigger>
                 <TabsTrigger value="gallery">Gallery</TabsTrigger>
                 <TabsTrigger value="experience">Experience</TabsTrigger>
+                <TabsTrigger value="favicon">Favicon</TabsTrigger>
               </TabsList>
 
               <TabsContent value="portfolio" className="mt-6">
@@ -283,6 +285,10 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="favicon" className="mt-6">
+                <FaviconForm />
               </TabsContent>
             </Tabs>
           </div>

@@ -1,5 +1,6 @@
-import { verifyPassword } from "@/lib/auth"
+import { verifyPassword, getInitialPasswordHash } from "@/lib/auth"
 import { type NextRequest, NextResponse } from "next/server"
+import crypto from "crypto"
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,9 +10,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Password required" }, { status: 400 })
     }
 
-    // Get stored password hash from environment or use default
-    const storedHash =
-      process.env.ADMIN_PASSWORD_HASH || "e7cf3ef4f17c3999a94f2c6f612e8a888e5b1026878e4e19398b23dd3f592622"
+    // Get stored password hash from environment or use default from lib/auth.ts
+    const storedHash = process.env.ADMIN_PASSWORD_HASH || getInitialPasswordHash()
+
+    console.log("Password verification attempt:")
+    console.log("Received password:", password)
+    console.log("Stored hash:", storedHash)
 
     const isValid = verifyPassword(password, storedHash)
 
