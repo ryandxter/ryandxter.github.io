@@ -105,27 +105,36 @@ export function Ticker() {
   useEffect(() => {
     const loadImages = async () => {
       try {
-        const response = await fetch("/ticker-images.json")
+        const response = await fetch("/api/gallery")
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
 
-        const data = await response.json()
+        const galleryImages = await response.json()
 
-        if (!data || typeof data !== "object") {
-          throw new Error("Invalid JSON structure")
+        if (!Array.isArray(galleryImages)) {
+          throw new Error("Invalid gallery format")
         }
 
-        const processedImages: { [key: string]: TickerImage[] } = Object.entries(data).reduce(
-          (acc, [row, urls]) => ({
-            ...acc,
-            [row]: (urls as string[]).map((url) => ({
-              id: Math.random().toString(36).substr(2, 9),
-              url,
-            })),
-          }),
-          {} as { [key: string]: TickerImage[] },
-        )
+        const processedImages: { [key: string]: TickerImage[] } = {}
+        galleryImages.forEach((img) => {
+          const rowKey = `row${img.row_number}`
+          if (!processedImages[rowKey]) {
+            processedImages[rowKey] = []
+          }
+          processedImages[rowKey].push({
+            id: img.id,
+            url: img.image_url,
+          })
+        })
+
+        Object.keys(processedImages).forEach((row) => {
+          processedImages[row].sort((a, b) => {
+            const aIndex = galleryImages.findIndex((img) => img.id === a.id)
+            const bIndex = galleryImages.findIndex((img) => img.id === b.id)
+            return galleryImages[aIndex].position - galleryImages[bIndex].position
+          })
+        })
 
         setTickerImages(processedImages)
       } catch (error) {
@@ -147,6 +156,10 @@ export function Ticker() {
     return <div className="text-center text-red-500 py-4">{error}</div>
   }
 
+  if (Object.keys(tickerImages).length === 0) {
+    return <div className="text-center text-neutral-500 py-4">No gallery images yet</div>
+  }
+
   return (
     <div
       className={`fixed left-0 right-0 bottom-0 h-screen z-0 transition-all duration-500 ease-in-out ${
@@ -156,26 +169,35 @@ export function Ticker() {
     >
       <Card className="w-full h-full bg-[#fafafa] p-2 sm:p-4 lg:p-6 overflow-hidden">
         <div className="w-full h-full flex flex-col justify-between gap-4 md:gap-6 lg:gap-9">
-          {Object.entries(tickerImages).map(([row, images], rowIndex) => (
-            <div key={row} className="relative h-[28vh]">
-              <TickerTrack direction={rowIndex % 2 === 0 ? "toRight" : "toLeft"} speed={20}>
-                {images.map((image) => (
-                  <div
-                    key={image.id}
-                    className="flex-shrink-0 w-[230px] sm:w-[280px] md:w-[330px] h-[28vh] rounded-lg overflow-hidden"
-                  >
-                    <Image
-                      src={image.url || "/placeholder.svg"}
-                      alt={`Ticker image`}
-                      width={330}
-                      height={224}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-              </TickerTrack>
-            </div>
-          ))}
+          {Object.entries(tickerImages)
+            .sort(([rowA], [rowB]) => {
+              const numA = Number.parseInt(rowA.replace("row", ""))
+              const numB = Number.parseInt(rowB.replace("row", ""))
+              return numA - numB
+            })
+            .map(([row, images], rowIndex) => (
+              <div key={row} className="relative h-[28vh]">
+                <TickerTrack direction={rowIndex % 2 === 0 ? "toRight" : "toLeft"} speed={20}>
+                  {images.map((image) => (
+                    <div
+                      key={image.id}
+                      className="flex-shrink-0 w-[230px] sm:w-[280px] md:w-[330px] h-[28vh] rounded-lg overflow-hidden"
+                    >
+                      <Image
+                        src={image.url || "/placeholder.svg"}
+                        alt={`Ticker image`}
+                        width={330}
+                        height={224}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.svg"
+                        }}
+                      />
+                    </div>
+                  ))}
+                </TickerTrack>
+              </div>
+            ))}
         </div>
       </Card>
     </div>

@@ -1,6 +1,7 @@
 import "@/app/globals.css"
 import { Inter } from "next/font/google"
 import type React from "react"
+import { DisableContextMenu } from "@/components/DisableContextMenu"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,7 +12,7 @@ const inter = Inter({
 export const metadata = {
   title: "Yadwinder Singh - Product Designer",
   description: "Freelance Product Designer based in India",
-    generator: 'v0.app'
+  generator: "v0.app",
 }
 
 export default function RootLayout({
@@ -21,7 +22,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <DisableContextMenu />
+        {children}
+      </body>
     </html>
   )
 }
