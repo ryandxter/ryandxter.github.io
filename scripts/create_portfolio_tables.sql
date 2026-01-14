@@ -1,11 +1,11 @@
--- Create portfolio_info table for name, career, about, email, availability
+-- Create portfolio_info table for name, title, bio, email, location
 CREATE TABLE IF NOT EXISTS portfolio_info (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  career_name TEXT NOT NULL,
-  about TEXT NOT NULL,
+  title TEXT NOT NULL,
+  bio TEXT NOT NULL,
   email TEXT NOT NULL,
-  availability TEXT NOT NULL,
+  location TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
 );
@@ -50,7 +50,7 @@ CREATE POLICY "gallery_images_public_update" ON gallery_images FOR UPDATE USING 
 CREATE POLICY "gallery_images_public_delete" ON gallery_images FOR DELETE USING (true);
 
 -- Insert default portfolio info if not exists
-INSERT INTO portfolio_info (name, career_name, about, email, availability)
+INSERT INTO portfolio_info (name, title, bio, email, location)
 VALUES (
   'Yadwinder Singh',
   'Freelance Product Designer',
