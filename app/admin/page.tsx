@@ -45,7 +45,6 @@ export default function AdminDashboard() {
   const [isLoadingSocial, setIsLoadingSocial] = useState(true)
   const [isLoadingGallery, setIsLoadingGallery] = useState(true)
   const [isSavingPortfolio, setIsSavingPortfolio] = useState(false)
-  const [isSeeding, setIsSeeding] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const { isAuthenticated, authenticate, logout, showWarning } = useAdminSession()
@@ -162,23 +161,7 @@ export default function AdminDashboard() {
   }
 
   const handleSeedData = async () => {
-    setIsSeeding(true)
-    setError(null)
-    try {
-      const response = await fetch("/api/seed", { method: "POST" })
-      if (!response.ok) throw new Error("Failed to sync data")
-      
-      // Refresh all data after seeding
-      await Promise.all([
-        fetchExperiences(),
-        fetchSocialLinks(),
-        fetchGalleryImages()
-      ])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to sync data")
-    } finally {
-      setIsSeeding(false)
-    }
+    // seed functionality removed: dashboard should persist settings to data/cv-data.ts
   }
 
   const editingExperience = experiences.find((exp) => exp.id === editingExperienceId)
@@ -212,13 +195,7 @@ export default function AdminDashboard() {
                 <Link href="/">
                   <Button variant="outline">Back to Portfolio</Button>
                 </Link>
-                <Button 
-                  variant="outline" 
-                  onClick={handleSeedData}
-                  disabled={isSeeding}
-                >
-                  {isSeeding ? "Syncing..." : "Sync from CV Data"}
-                </Button>
+                {/* Seed/sync button removed — dashboard now writes settings to data/cv-data.ts */}
                 <Button variant="destructive" onClick={logout}>
                   Logout
                 </Button>

@@ -55,6 +55,34 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Also update the local data/cv-data.ts so meta info reflects latest dashboard settings
+    try {
+      const fs = await import("fs/promises")
+      const path = await import("path")
+      const filePath = path.join(process.cwd(), "data", "cv-data.ts")
+      let fileContents = await fs.readFile(filePath, "utf8")
+
+      const newPersonalBlock = `personal: {
+    name: ${JSON.stringify(name)},
+    title: ${JSON.stringify(title)},
+    email: ${JSON.stringify(email)},
+    location: ${JSON.stringify(location)},
+    bio: ${JSON.stringify(bio)},
+  },`
+
+      const personalRegex = /personal:\s*{[\s\S]*?},/m
+
+      if (personalRegex.test(fileContents)) {
+        fileContents = fileContents.replace(personalRegex, newPersonalBlock)
+        await fs.writeFile(filePath, fileContents, "utf8")
+        console.log("Updated data/cv-data.ts personal block from dashboard save")
+      } else {
+        console.warn("Could not find personal block in data/cv-data.ts to update")
+      }
+    } catch (err) {
+      console.error("Failed to update data/cv-data.ts:", err)
+    }
+
     return NextResponse.json(data)
   } catch (error) {
     return NextResponse.json({ error: "Failed to update portfolio info" }, { status: 500 })
