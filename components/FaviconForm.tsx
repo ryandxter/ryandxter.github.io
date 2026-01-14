@@ -75,7 +75,7 @@ export function FaviconForm() {
     <Card>
       <CardHeader>
         <CardTitle>Favicon Management</CardTitle>
-        <CardDescription>Upload a custom favicon for your portfolio. Recommended: 32x32 ICO or 180x180 PNG file</CardDescription>
+        <CardDescription>Upload a custom favicon for your portfolio. Recommended: 32x32 ICO or 256x256 PNG file</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">

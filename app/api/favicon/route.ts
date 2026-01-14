@@ -27,21 +27,25 @@ export async function POST(request: NextRequest) {
 
     // Save to public folder
     const publicPath = join(process.cwd(), "public")
-    const filename = file.type.includes("png") ? "apple-touch-icon.png" : "favicon.ico"
-    const filepath = join(publicPath, filename)
-
+    const isPng = file.type.includes("png")
+    const filenames = isPng ? ["favicon.png", "apple-touch-icon.png"] : ["favicon.ico"]
+    
     try {
       await mkdir(publicPath, { recursive: true })
     } catch (err) {
       // Directory might already exist
     }
 
-    await writeFile(filepath, buffer)
+    // Save to all required locations
+    for (const filename of filenames) {
+      const filepath = join(publicPath, filename)
+      await writeFile(filepath, buffer)
+    }
 
     return NextResponse.json({
       success: true,
-      message: `Favicon uploaded successfully as ${filename}`,
-      filename,
+      message: `Favicon uploaded successfully`,
+      filenames,
     })
   } catch (error) {
     console.error("Favicon upload error:", error)

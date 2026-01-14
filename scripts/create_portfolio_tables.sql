@@ -63,8 +63,7 @@ ON CONFLICT DO NOTHING;
 -- Insert default social links if not exist
 INSERT INTO social_links (label, href)
 VALUES
-  ('Email', 'mailto:yadwinder.design@gmail.com'),
-  ('Twitter', 'https://x.com/ydwndr'),
-  ('Dribbble', 'https://dribbble.com/yadwinders'),
-  ('GitHub', 'https://github.com/singh-yadwinder')
+  ('Email', 'mailto:ryndxtr@gmail.com'),
+  ('Twitter', 'https://x.com/ryandxter'),
+  ('GitHub', 'https://github.com/ryandxter')
 ON CONFLICT (label) DO NOTHING;

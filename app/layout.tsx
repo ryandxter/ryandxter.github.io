@@ -12,12 +12,35 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: `${cvData.personal.name} - ${cvData.personal.title}`,
-  description: cvData.personal.bio,
+  title: `${cvData.personal.name} | Portfolio`,
+  description: "Riansyah Rizky Curriculum Vitae - R&D Photography Videography System",
+  authors: [{ name: "Riansyah Rizky" }],
+  creator: "Riansyah Rizky",
+  keywords: ["portfolio", "photography", "videography", "R&D", "Riansyah Rizky Poetra"],
   generator: "v0.app",
+  openGraph: {
+    title: `${cvData.personal.name} | Portfolio`,
+    description: "Riansyah Rizky Curriculum Vitae - R&D Photography Videography System",
+    type: "website",
+    url: "https://v0-simple-portfolio-gm.vercel.app",
+    images: [
+      {
+        url: "/favicon.png",
+        width: 256,
+        height: 256,
+        alt: "Riansyah Rizky Logo",
+      },
+    ],
+  },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: [
+      {
+        url: "/favicon.png",
+        sizes: "256x256",
+        type: "image/png",
+      },
+    ],
+    apple: "/favicon.png",
   },
 }
 
