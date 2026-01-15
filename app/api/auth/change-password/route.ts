@@ -1,5 +1,7 @@
 import { hashNewPassword } from "@/lib/auth"
 import { type NextRequest, NextResponse } from "next/server"
+import fs from "fs/promises"
+import path from "path"
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,15 +27,53 @@ export async function POST(request: NextRequest) {
 
     // Hash new password
     const newHash = hashNewPassword(newPassword)
+    // Attempt to persist to local .env.local when running in non-production environments
+    let persisted = false
+    let persistError: string | null = null
 
-    // In a real app, you'd save this to your database
-    // For now, we'll just return success (user needs to update env var in dashboard)
-    console.log("New password hash:", newHash)
+    try {
+      const isProd = process.env.NODE_ENV === "production"
+      if (!isProd) {
+        const envPath = path.join(process.cwd(), ".env.local")
+        try {
+          let content = ""
+          try {
+            content = await fs.readFile(envPath, { encoding: "utf8" })
+          } catch (e) {
+            // file may not exist; we'll create it
+            content = ""
+          }
+
+          const line = `ADMIN_PASSWORD_HASH=\"${newHash}\"`
+
+          if (/^ADMIN_PASSWORD_HASH=/m.test(content)) {
+            // replace existing line
+            content = content.replace(/^ADMIN_PASSWORD_HASH=.*$/m, line)
+          } else {
+            if (content.length && !content.endsWith("\n")) content += "\n"
+            content += line + "\n"
+          }
+
+          await fs.writeFile(envPath, content, { encoding: "utf8" })
+          persisted = true
+        } catch (writeErr: any) {
+          persistError = writeErr?.message || String(writeErr)
+        }
+      }
+    } catch (err: any) {
+      persistError = err?.message || String(err)
+    }
+
+    console.log("New password hash:", newHash, "persisted:", persisted, "err:", persistError)
 
     return NextResponse.json({
       success: true,
-      message: "Password updated. Please update ADMIN_PASSWORD_HASH in your environment variables.",
+      message: persisted
+        ? "Password updated and persisted to .env.local (development)."
+        : "Password hashed. Update ADMIN_PASSWORD_HASH in your environment variables.",
       newHash,
+      persisted,
+      persistError,
     })
   } catch (error) {
     return NextResponse.json({ error: "Password change failed" }, { status: 500 })
