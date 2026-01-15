@@ -44,6 +44,29 @@ export default function ChangePasswordForm() {
     }
   }
 
+  const handleSendResetEmail = async () => {
+    setIsLoading(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const res = await fetch("/api/auth/reset-password", { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || "Failed to send reset email")
+      } else {
+        if (data.token) {
+          setMessage(`SMTP not configured; reset token: ${data.token}`)
+        } else {
+          setMessage(data.message || "Reset email sent")
+        }
+      }
+    } catch (err) {
+      setError("Failed to contact server")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const copyHash = async () => {
     if (!newHash) return
     await navigator.clipboard.writeText(newHash)
@@ -86,6 +109,9 @@ export default function ChangePasswordForm() {
         <div className="flex gap-2">
           <Button type="submit" disabled={isLoading}>
             {isLoading ? "Updating..." : "Change Password"}
+          </Button>
+          <Button variant="ghost" onClick={handleSendResetEmail} disabled={isLoading}>
+            Send Reset Link to Personal Email
           </Button>
           <Button
             variant="ghost"
