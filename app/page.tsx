@@ -230,12 +230,14 @@ function CTAButtons({
     >
       <Button
         variant="default"
-        onClick={() => email && navigator.clipboard.writeText(email)}
+        onClick={() => {
+          if (!isLoadingPortfolio && email) window.location.href = `mailto:${email}`
+        }}
         className="w-full sm:w-auto inline-flex h-[34px] items-center justify-center gap-2.5 pl-4 pr-3 py-0 bg-[#020618] rounded-[99px] hover:bg-[#020618]/90 text-slate-50 disabled:opacity-50"
         disabled={isLoadingPortfolio || !email}
       >
         <span className="font-medium text-[13px] leading-5 text-slate-50">
-          {isLoadingPortfolio ? "Loading..." : "Copy email"}
+          {isLoadingPortfolio ? "Loading..." : "Kirim email"}
         </span>
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" className="text-slate-50">
           <title>chevron-right</title>

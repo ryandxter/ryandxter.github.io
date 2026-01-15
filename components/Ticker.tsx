@@ -9,6 +9,7 @@ import React from "react"
 interface TickerImage {
   id: string
   url: string
+  aspect?: number
 }
 
 interface TickerTrackProps {
@@ -117,17 +118,39 @@ export function Ticker() {
           throw new Error("Invalid gallery format")
         }
 
+        // Preload images to get aspect ratios, group by row
         const processedImages: { [key: string]: TickerImage[] } = {}
+
+        const loadAspect = (url: string) =>
+          new Promise<number>((resolve) => {
+            const img = new window.Image()
+            img.onload = () => {
+              const aspect = img.naturalWidth / Math.max(img.naturalHeight, 1)
+              resolve(aspect || 16 / 9)
+            }
+            img.onerror = () => resolve(16 / 9)
+            img.src = url
+          })
+
+        // gather promises for all images
+        const promises: Promise<void>[] = []
+
         galleryImages.forEach((img) => {
           const rowKey = `row${img.row_number}`
-          if (!processedImages[rowKey]) {
-            processedImages[rowKey] = []
-          }
-          processedImages[rowKey].push({
-            id: img.id,
-            url: img.image_url,
+          if (!processedImages[rowKey]) processedImages[rowKey] = []
+
+          const p = loadAspect(img.image_url).then((aspect) => {
+            processedImages[rowKey].push({
+              id: img.id,
+              url: img.image_url,
+              aspect,
+            })
           })
+
+          promises.push(p)
         })
+
+        await Promise.all(promises)
 
         Object.keys(processedImages).forEach((row) => {
           processedImages[row].sort((a, b) => {
@@ -182,23 +205,32 @@ export function Ticker() {
             .map(([row, images], rowIndex) => (
               <div key={row} className="relative h-[28vh]">
                 <TickerTrack direction={rowIndex % 2 === 0 ? "toRight" : "toLeft"} speed={20}>
-                  {images.map((image) => (
-                    <div
-                      key={image.id}
-                      className="flex-shrink-0 w-[230px] sm:w-[280px] md:w-[330px] h-[28vh] rounded-lg overflow-hidden"
-                    >
-                      <Image
-                        src={image.url || "/placeholder.svg"}
-                        alt={`Ticker image`}
-                        width={330}
-                        height={224}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg"
-                        }}
-                      />
-                    </div>
-                  ))}
+                  {images.map((image) => {
+                    const aspect = image.aspect || 16 / 9
+                    // compute tile height in px based on 28vh
+                    const tileHeightPx = Math.round(window.innerHeight * 0.28)
+                    // base width is aspect * height; add slight randomness for variety
+                    const jitter = 0.88 + Math.random() * 0.24 // 0.88 - 1.12
+                    const rawWidth = Math.round(aspect * tileHeightPx * jitter)
+                    const tileWidth = Math.max(160, Math.min(420, rawWidth))
+
+                    return (
+                      <div
+                        key={image.id}
+                        className="flex-shrink-0 h-[28vh] rounded-lg overflow-hidden bg-neutral-100"
+                        style={{ width: `${tileWidth}px` }}
+                      >
+                        <img
+                          src={image.url || "/placeholder.svg"}
+                          alt={`Ticker image`}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          onError={(e) => {
+                            ;(e.target as HTMLImageElement).src = "/placeholder.svg"
+                          }}
+                        />
+                      </div>
+                    )
+                  })}
                 </TickerTrack>
               </div>
             ))}
