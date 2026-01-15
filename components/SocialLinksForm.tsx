@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { getAdminSession } from "@/lib/admin-session"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -40,9 +41,10 @@ export function SocialLinksForm({ links, onRefresh }: SocialLinksFormProps) {
       const method = editingId ? "PUT" : "POST"
       const url = editingId ? `/api/social-links/${editingId}` : "/api/social-links"
 
+      const token = getAdminSession()
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-session": token || "" },
         body: JSON.stringify({ label, href }),
       })
 
@@ -69,7 +71,8 @@ export function SocialLinksForm({ links, onRefresh }: SocialLinksFormProps) {
     if (!confirm("Delete this social link?")) return
 
     try {
-      const response = await fetch(`/api/social-links/${id}`, { method: "DELETE" })
+      const token = getAdminSession()
+      const response = await fetch(`/api/social-links/${id}`, { method: "DELETE", headers: { "x-admin-session": token || "" } })
       if (!response.ok) throw new Error("Failed to delete")
       await onRefresh()
     } catch (err) {
