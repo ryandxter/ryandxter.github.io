@@ -3,11 +3,25 @@ import { NextResponse } from "next/server"
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    if (!params?.id) {
+    const url = request.url
+    const search = new URL(url).searchParams
+    const fallbackId = search.get("id") || search.get("nxtPid") || null
+    const id = params?.id || fallbackId || (() => {
+      try {
+        const p = new URL(url).pathname
+        const parts = p.split("/").filter(Boolean)
+        return parts.length ? parts[parts.length - 1] : null
+      } catch {
+        return null
+      }
+    })()
+
+    if (!id) {
+      console.warn("GET /api/experiences called without id", { url })
       return NextResponse.json({ error: "Missing experience id" }, { status: 400 })
     }
     const supabase = await createClient()
-    const { data, error } = await supabase.from("experiences").select("*").eq("id", params.id).single()
+    const { data, error } = await supabase.from("experiences").select("*").eq("id", id).single()
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 404 })
@@ -21,7 +35,21 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
-    if (!params?.id) {
+    const url = request.url
+    const search = new URL(url).searchParams
+    const fallbackId = search.get("id") || search.get("nxtPid") || null
+    const id = params?.id || fallbackId || (() => {
+      try {
+        const p = new URL(url).pathname
+        const parts = p.split("/").filter(Boolean)
+        return parts.length ? parts[parts.length - 1] : null
+      } catch {
+        return null
+      }
+    })()
+
+    if (!id) {
+      console.warn("PUT /api/experiences called without id", { url })
       return NextResponse.json({ error: "Missing experience id" }, { status: 400 })
     }
     // validate admin session for mutating
@@ -43,7 +71,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const { data, error } = await supabase
       .from("experiences")
       .update({ company, period, description, updated_at: new Date().toISOString() })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
 
     if (error) {
@@ -58,8 +86,21 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    if (!params?.id) {
-      console.warn("DELETE /api/experiences called without id")
+    const url = request.url
+    const search = new URL(url).searchParams
+    const fallbackId = search.get("id") || search.get("nxtPid") || null
+    const id = params?.id || fallbackId || (() => {
+      try {
+        const p = new URL(url).pathname
+        const parts = p.split("/").filter(Boolean)
+        return parts.length ? parts[parts.length - 1] : null
+      } catch {
+        return null
+      }
+    })()
+
+    if (!id) {
+      console.warn("DELETE /api/experiences called without id", { url })
       return NextResponse.json({ error: "Missing experience id" }, { status: 400 })
     }
     // validate admin session for mutating
@@ -72,7 +113,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     }
 
     const supabase = await createClient()
-    const { error } = await supabase.from("experiences").delete().eq("id", params.id)
+    const { error } = await supabase.from("experiences").delete().eq("id", id)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
