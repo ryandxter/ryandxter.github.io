@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
-import { PersonalInfoForm } from "@/components/PersonalInfoForm"
+import { PortfolioInfoForm } from "@/components/PortfolioInfoForm"
 import { SocialLinksForm } from "@/components/SocialLinksForm"
 import { GalleryImagesForm } from "@/components/GalleryImagesForm"
 import { ExperienceForm } from "@/components/ExperienceForm"
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
               </TabsList>
 
               <TabsContent value="portfolio" className="mt-6">
-                <PersonalInfoForm />
+                <PortfolioInfoForm onSubmit={handleSavePortfolioInfo} />
               </TabsContent>
 
               <TabsContent value="social" className="mt-6">
