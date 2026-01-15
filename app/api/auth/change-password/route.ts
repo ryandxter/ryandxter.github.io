@@ -38,12 +38,19 @@ export async function POST(request: NextRequest) {
     if (!success) {
       return NextResponse.json({ error: updateError || "Failed to update admin password" }, { status: 500 })
     }
+    // Revoke all existing sessions so clients must re-authenticate
+    try {
+      const { revokeAllAdminSessions } = await import("@/lib/admin-sessions")
+      await revokeAllAdminSessions()
+    } catch (e) {
+      console.warn("Failed to revoke sessions after password change", e)
+    }
 
-    console.log("New password hash persisted to DB for admin")
+    console.log("New password hash persisted to DB for admin and sessions revoked")
 
     return NextResponse.json({
       success: true,
-      message: "Password updated and persisted to database.",
+      message: "Password updated and persisted to database. All sessions revoked; re-login required.",
       newHash,
     })
   } catch (error) {

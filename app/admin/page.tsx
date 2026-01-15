@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Trash2, Edit2 } from "lucide-react"
 import { PasswordModal } from "@/components/PasswordModal"
 import { useAdminSession } from "@/hooks/useAdminSession"
+import { getAdminSession } from "@/lib/admin-session"
 import { setAdminSession } from "@/lib/admin-session"
 
 interface Experience {
@@ -107,9 +108,10 @@ export default function AdminDashboard() {
 
   const handleAddExperience = async (data: { company: string; period: string; description: string }) => {
     try {
+      const token = getAdminSession()
       const response = await fetch("/api/experiences", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-session": token || "" },
         body: JSON.stringify(data),
       })
       if (!response.ok) throw new Error("Failed to add experience")
@@ -121,9 +123,10 @@ export default function AdminDashboard() {
 
   const handleUpdateExperience = async (id: string, data: { company: string; period: string; description: string }) => {
     try {
+      const token = getAdminSession()
       const response = await fetch(`/api/experiences/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-session": token || "" },
         body: JSON.stringify(data),
       })
       if (!response.ok) throw new Error("Failed to update experience")
@@ -142,7 +145,8 @@ export default function AdminDashboard() {
 
     if (!confirm("Are you sure you want to delete this experience?")) return
     try {
-      const response = await fetch(`/api/experiences/${id}`, { method: "DELETE" })
+      const token = getAdminSession()
+      const response = await fetch(`/api/experiences/${id}`, { method: "DELETE", headers: { "x-admin-session": token || "" } })
       if (!response.ok) throw new Error("Failed to delete experience")
       await fetchExperiences()
     } catch (err) {

@@ -2,6 +2,12 @@ import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  // require admin session
+  const token = (request as any).headers?.get?.("x-admin-session") || (request as any).headers?.get?.("authorization")?.replace(/^Bearer\s+/i, "")
+  const { validateAdminToken } = await import("@/lib/admin-sessions")
+  const valid = await validateAdminToken(token)
+  if (!valid) return NextResponse.json({ error: "Missing or invalid admin session" }, { status: 401 })
+
   try {
     const { id } = await params
     const body = await request.json()
@@ -25,6 +31,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  // require admin session
+  const token = (request as any).headers?.get?.("x-admin-session") || (request as any).headers?.get?.("authorization")?.replace(/^Bearer\s+/i, "")
+  const { validateAdminToken } = await import("@/lib/admin-sessions")
+  const valid = await validateAdminToken(token)
+  if (!valid) return NextResponse.json({ error: "Missing or invalid admin session" }, { status: 401 })
+
   try {
     const { id } = await params
     const supabase = await createClient()

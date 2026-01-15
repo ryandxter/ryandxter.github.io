@@ -17,6 +17,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  // require admin session
+  const token = (request as any).headers?.get?.("x-admin-session") || (request as any).headers?.get?.("authorization")?.replace(/^Bearer\s+/i, "")
+  const { validateAdminToken } = await import("@/lib/admin-sessions")
+  const valid = await validateAdminToken(token)
+  if (!valid) return NextResponse.json({ error: "Missing or invalid admin session" }, { status: 401 })
+
   try {
     const body = await request.json()
     const { label, href } = body

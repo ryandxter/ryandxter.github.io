@@ -2,6 +2,7 @@ import { verifyPassword } from "@/lib/auth"
 import { type NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import { ensureAdminSeeded, getAdmin } from "@/lib/admin-credentials"
+import { createAdminSession } from "@/lib/admin-sessions"
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,19 +28,14 @@ export async function POST(request: NextRequest) {
     const isValid = verifyPassword(password, storedHash)
 
     if (isValid) {
-      // Create session token valid for 2 minutes
+      // Create session token valid for 2 minutes and persist server-side
       const sessionToken = crypto.randomBytes(32).toString("hex")
       const expiresAt = Date.now() + 2 * 60 * 1000 // 2 minutes
 
-      return NextResponse.json(
-        { success: true, sessionToken, expiresAt },
-        {
-          status: 200,
-          headers: {
-            "Set-Cookie": `adminSession=${sessionToken}; Path=/admin; HttpOnly; SameSite=Strict; Max-Age=120`,
-          },
-        },
-      )
+      const expiresISO = new Date(expiresAt).toISOString()
+      await createAdminSession(sessionToken, "admin", expiresISO)
+
+      return NextResponse.json({ success: true, sessionToken, expiresAt }, { status: 200 })
     }
 
     return NextResponse.json({ error: "Invalid password" }, { status: 401 })
