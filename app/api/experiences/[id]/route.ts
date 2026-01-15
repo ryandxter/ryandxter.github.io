@@ -68,17 +68,23 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     const supabase = await createClient()
-    const { data, error } = await supabase
+    const { error: updateError } = await supabase
       .from("experiences")
       .update({ company, period, description, updated_at: new Date().toISOString() })
       .eq("id", id)
-      .select()
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (updateError) {
+      console.error("Supabase update error:", updateError)
+      return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
-    return NextResponse.json(data[0])
+    const { data: row, error: fetchError } = await supabase.from("experiences").select("*").eq("id", id).single()
+    if (fetchError) {
+      console.error("Supabase fetch after update error:", fetchError)
+      return NextResponse.json({ error: fetchError.message }, { status: 500 })
+    }
+
+    return NextResponse.json(row)
   } catch (error) {
     console.error("PUT /api/experiences error:", error)
     return NextResponse.json({ error: "Failed to update experience" }, { status: 500 })
