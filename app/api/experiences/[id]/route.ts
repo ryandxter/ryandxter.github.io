@@ -80,6 +80,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
     return NextResponse.json(data[0])
   } catch (error) {
+    console.error("PUT /api/experiences error:", error)
     return NextResponse.json({ error: "Failed to update experience" }, { status: 500 })
   }
 }
@@ -121,6 +122,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    console.error("DELETE /api/experiences error:", error)
     return NextResponse.json({ error: "Failed to delete experience" }, { status: 500 })
   }
 }
