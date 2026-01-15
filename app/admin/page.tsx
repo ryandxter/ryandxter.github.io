@@ -135,6 +135,11 @@ export default function AdminDashboard() {
   }
 
   const handleDeleteExperience = async (id: string) => {
+    if (!id) {
+      setError("Invalid experience id")
+      return
+    }
+
     if (!confirm("Are you sure you want to delete this experience?")) return
     try {
       const response = await fetch(`/api/experiences/${id}`, { method: "DELETE" })

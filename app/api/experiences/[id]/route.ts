@@ -3,6 +3,9 @@ import { NextResponse } from "next/server"
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
+    if (!params?.id) {
+      return NextResponse.json({ error: "Missing experience id" }, { status: 400 })
+    }
     const supabase = await createClient()
     const { data, error } = await supabase.from("experiences").select("*").eq("id", params.id).single()
 
@@ -18,6 +21,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
+    if (!params?.id) {
+      return NextResponse.json({ error: "Missing experience id" }, { status: 400 })
+    }
     const body = await request.json()
     const { company, period, description } = body
 
@@ -44,6 +50,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
+    if (!params?.id) {
+      console.warn("DELETE /api/experiences called without id")
+      return NextResponse.json({ error: "Missing experience id" }, { status: 400 })
+    }
     const supabase = await createClient()
     const { error } = await supabase.from("experiences").delete().eq("id", params.id)
 
