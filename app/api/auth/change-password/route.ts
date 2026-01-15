@@ -1,7 +1,6 @@
 import { hashNewPassword } from "@/lib/auth"
 import { type NextRequest, NextResponse } from "next/server"
-import fs from "fs/promises"
-import path from "path"
+import { ensureAdminSeeded, updateAdminPasswordHash, getAdmin } from "@/lib/admin-credentials"
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,53 +26,25 @@ export async function POST(request: NextRequest) {
 
     // Hash new password
     const newHash = hashNewPassword(newPassword)
-    // Attempt to persist to local .env.local when running in non-production environments
-    let persisted = false
-    let persistError: string | null = null
-
-    try {
-      const isProd = process.env.NODE_ENV === "production"
-      if (!isProd) {
-        const envPath = path.join(process.cwd(), ".env.local")
-        try {
-          let content = ""
-          try {
-            content = await fs.readFile(envPath, { encoding: "utf8" })
-          } catch (e) {
-            // file may not exist; we'll create it
-            content = ""
-          }
-
-          const line = `ADMIN_PASSWORD_HASH=\"${newHash}\"`
-
-          if (/^ADMIN_PASSWORD_HASH=/m.test(content)) {
-            // replace existing line
-            content = content.replace(/^ADMIN_PASSWORD_HASH=.*$/m, line)
-          } else {
-            if (content.length && !content.endsWith("\n")) content += "\n"
-            content += line + "\n"
-          }
-
-          await fs.writeFile(envPath, content, { encoding: "utf8" })
-          persisted = true
-        } catch (writeErr: any) {
-          persistError = writeErr?.message || String(writeErr)
-        }
-      }
-    } catch (err: any) {
-      persistError = err?.message || String(err)
+    // Persist new hash into DB-backed admin credential
+    await ensureAdminSeeded()
+    const admin = await getAdmin()
+    if (!admin) {
+      return NextResponse.json({ error: "Failed to seed admin credential" }, { status: 500 })
     }
 
-    console.log("New password hash:", newHash, "persisted:", persisted, "err:", persistError)
+    const { success, error: updateError } = await updateAdminPasswordHash(newHash)
+
+    if (!success) {
+      return NextResponse.json({ error: updateError || "Failed to update admin password" }, { status: 500 })
+    }
+
+    console.log("New password hash persisted to DB for admin")
 
     return NextResponse.json({
       success: true,
-      message: persisted
-        ? "Password updated and persisted to .env.local (development)."
-        : "Password hashed. Update ADMIN_PASSWORD_HASH in your environment variables.",
+      message: "Password updated and persisted to database.",
       newHash,
-      persisted,
-      persistError,
     })
   } catch (error) {
     return NextResponse.json({ error: "Password change failed" }, { status: 500 })

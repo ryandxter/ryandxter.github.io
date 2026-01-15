@@ -1,6 +1,7 @@
-import { verifyPassword, getInitialPasswordHash } from "@/lib/auth"
+import { verifyPassword } from "@/lib/auth"
 import { type NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
+import { ensureAdminSeeded, getAdmin } from "@/lib/admin-credentials"
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,12 +11,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Password required" }, { status: 400 })
     }
 
-    // Get stored password hash from environment or use default from lib/auth.ts
-    const storedHash = process.env.ADMIN_PASSWORD_HASH || getInitialPasswordHash()
+    // Ensure an admin credential exists in DB (seed if necessary)
+    await ensureAdminSeeded()
+    const admin = await getAdmin()
+    const storedHash = admin?.password_hash
 
     console.log("Password verification attempt:")
     console.log("Received password:", password)
-    console.log("Stored hash:", storedHash)
+    console.log("Stored hash (from DB):", !!storedHash)
+
+    if (!storedHash) {
+      return NextResponse.json({ error: "No admin credential configured" }, { status: 500 })
+    }
 
     const isValid = verifyPassword(password, storedHash)
 
