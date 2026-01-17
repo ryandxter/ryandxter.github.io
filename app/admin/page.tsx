@@ -114,6 +114,12 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json", "x-admin-session": token || "" },
         body: JSON.stringify(data),
       })
+      if (response.status === 401) {
+        setAuthError("Session expired or invalid. Please re-authenticate.")
+        setShowPasswordModal(true)
+        logout()
+        throw new Error("Unauthorized")
+      }
       if (!response.ok) throw new Error("Failed to add experience")
       await fetchExperiences()
     } catch (err) {
@@ -129,6 +135,12 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json", "x-admin-session": token || "" },
         body: JSON.stringify(data),
       })
+      if (response.status === 401) {
+        setAuthError("Session expired or invalid. Please re-authenticate.")
+        setShowPasswordModal(true)
+        logout()
+        throw new Error("Unauthorized")
+      }
       if (!response.ok) throw new Error("Failed to update experience")
       await fetchExperiences()
       setEditingExperienceId(null)
@@ -147,6 +159,12 @@ export default function AdminDashboard() {
     try {
       const token = getAdminSession()
       const response = await fetch(`/api/experiences/${id}`, { method: "DELETE", headers: { "x-admin-session": token || "" } })
+      if (response.status === 401) {
+        setAuthError("Session expired or invalid. Please re-authenticate.")
+        setShowPasswordModal(true)
+        logout()
+        throw new Error("Unauthorized")
+      }
       if (!response.ok) throw new Error("Failed to delete experience")
       await fetchExperiences()
     } catch (err) {
