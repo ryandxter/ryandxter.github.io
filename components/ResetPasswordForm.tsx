@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,12 +19,14 @@ export default function ResetPasswordForm({ token = "" }: Props) {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const params = useSearchParams()
+  const resetToken = token || params?.get("token") || ""
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setMessage(null)
-    if (!token) return setError("Missing reset token")
+    if (!resetToken) return setError("Missing reset token")
     if (newPassword.length < 6) return setError("Password too short (min 6)")
     if (newPassword !== confirm) return setError("Passwords do not match")
 
@@ -32,7 +35,7 @@ export default function ResetPasswordForm({ token = "" }: Props) {
       const res = await fetch("/api/auth/perform-reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, newPassword }),
+        body: JSON.stringify({ token: resetToken, newPassword }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to reset password")
