@@ -60,12 +60,8 @@ export function PasswordModal({ isOpen, onAuthenticate, onError }: PasswordModal
       if (!res.ok) {
         setError(data.error || "Failed to request reset link")
       } else {
-        if (data.token) {
-          // SMTP not configured — return token for dev use
-          setInfo(`Reset token (dev): ${data.token}`)
-        } else {
-          setInfo(data.message || `Reset link sent to your personal email`)
-        }
+        // Do not display the raw token in the UI; show a generic message
+        setInfo(data.message || `Reset link sent to your personal email`)
       }
     } catch (err) {
       setError("Failed to contact server")
