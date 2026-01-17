@@ -27,6 +27,9 @@ export async function PUT(request: Request) {
     const email = body.email
     const location = body.location || body.availability
     const bio = body.bio || body.about
+    const og_title = body.og_title || body.ogTitle || null
+    const og_description = body.og_description || body.ogDescription || null
+    const og_image_url = body.og_image_url || body.ogImageUrl || null
 
     if (!name || !title || !email || !bio) {
       return NextResponse.json({ error: "Missing required fields (name, title/career_name, email, bio/about)" }, { status: 400 })
@@ -49,6 +52,9 @@ export async function PUT(request: Request) {
     updateObj.career_name = title
     updateObj.bio = bio
     updateObj.about = bio
+    if (og_title !== null) updateObj.og_title = og_title
+    if (og_description !== null) updateObj.og_description = og_description
+    if (og_image_url !== null) updateObj.og_image_url = og_image_url
     if (location) {
       updateObj.location = location
       updateObj.availability = location
@@ -83,6 +89,20 @@ export async function PUT(request: Request) {
         console.log("Updated data/cv-data.ts personal block from dashboard save")
       } else {
         console.warn("Could not find personal block in data/cv-data.ts to update")
+      }
+      // Update or append siteMeta export for OG settings
+      const siteMetaBlock = `export const siteMeta = {\n      title: ${JSON.stringify(og_title || title)},\n      description: ${JSON.stringify(og_description || bio)},\n      image: ${JSON.stringify(og_image_url || "")},\n    }\n`;
+
+      const siteMetaRegex = /export\s+const\s+siteMeta\s*=\s*{[\s\S]*?}\s*/m
+      if (siteMetaRegex.test(fileContents)) {
+        fileContents = fileContents.replace(siteMetaRegex, siteMetaBlock)
+        await fs.writeFile(filePath, fileContents, "utf8")
+        console.log("Updated data/cv-data.ts siteMeta block from dashboard save")
+      } else {
+        // append at the end
+        fileContents = fileContents + "\n" + siteMetaBlock
+        await fs.writeFile(filePath, fileContents, "utf8")
+        console.log("Appended siteMeta to data/cv-data.ts from dashboard save")
       }
     } catch (err) {
       console.error("Failed to update data/cv-data.ts:", err)
