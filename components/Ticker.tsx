@@ -131,6 +131,7 @@ export function Ticker() {
   const [tickerImages, setTickerImages] = useState<{ [key: string]: TickerImage[] }>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isReaderMode, setIsReaderMode] = useState(false)
 
   const rows = useMemo(() => Object.entries(tickerImages).sort(([rowA], [rowB]) => {
     const numA = Number.parseInt(rowA.replace("row", ""))
@@ -336,7 +337,17 @@ export function Ticker() {
     }
 
     loadImages()
-  }, [])
+    }, [])
+
+    // detect reader-mode class on documentElement and update state
+    useEffect(() => {
+      if (typeof document === "undefined") return
+      const check = () => setIsReaderMode(document.documentElement.classList.contains("reader-mode"))
+      check()
+      const mo = new MutationObserver(() => check())
+      mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
+      return () => mo.disconnect()
+    }, [])
 
   if (isLoading) {
     return <div className="text-center py-4">Loading...</div>
@@ -368,44 +379,68 @@ export function Ticker() {
       >
         {/* plain background for gallery - background flow module removed */}
         <div className="w-full h-full flex flex-col justify-between gap-4 md:gap-6 lg:gap-9 relative z-10">
-          {rows.map(([row, images], rowIndex) => (
-            <div
-              key={row}
-              className="relative h-[28vh]"
-              ref={(el) => {
-                if (rowIndex === 0) topRowRef.current = el
-                if (rowIndex === rows.length - 1) bottomRowRef.current = el
-              }}
-            >
-              <TickerTrack direction={rowIndex % 2 === 0 ? "toRight" : "toLeft"} speed={20} globalEnabled={globalEnabled}>
-                {images.map((image) => {
-                  const aspect = image.aspect || 16 / 9
-                  // compute tile height in px based on 28vh
-                  const tileHeightPx = Math.round(window.innerHeight * 0.28)
-                  // base width is aspect * height; add slight randomness for variety
-                  const jitter = 0.88 + Math.random() * 0.24 // 0.88 - 1.12
-                  const rawWidth = Math.round(aspect * tileHeightPx * jitter)
-                  const tileWidth = Math.max(160, Math.min(420, rawWidth))
+          {isReaderMode ? (
+            // flattened grid for reader-mode (2 columns)
+            (() => {
+              const flat: TickerImage[] = []
+              rows.forEach(([, imgs]) => flat.push(...imgs))
+              // if odd, add a placeholder to make even
+              const needsPlaceholder = flat.length % 2 !== 0
+              if (needsPlaceholder) flat.push({ id: "placeholder", url: "" })
+              return (
+                <div className="ticker-content grid grid-cols-2 gap-2 p-2" style={{ width: "auto" }}>
+                  {flat.map((image) => (
+                    image.url ? (
+                      <div key={image.id} className="ticker-tile rounded-lg overflow-hidden bg-neutral-100">
+                        <OptimizedGalleryImage src={image.url} alt={`Ticker image`} width={300} height={300} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div key={image.id} className="ticker-tile rounded-lg overflow-hidden bg-transparent" />
+                    )
+                  ))}
+                </div>
+              )
+            })()
+          ) : (
+            rows.map(([row, images], rowIndex) => (
+              <div
+                key={row}
+                className="relative h-[28vh]"
+                ref={(el) => {
+                  if (rowIndex === 0) topRowRef.current = el
+                  if (rowIndex === rows.length - 1) bottomRowRef.current = el
+                }}
+              >
+                <TickerTrack direction={rowIndex % 2 === 0 ? "toRight" : "toLeft"} speed={20} globalEnabled={globalEnabled}>
+                  {images.map((image) => {
+                    const aspect = image.aspect || 16 / 9
+                    // compute tile height in px based on 28vh
+                    const tileHeightPx = Math.round(window.innerHeight * 0.28)
+                    // base width is aspect * height; add slight randomness for variety
+                    const jitter = 0.88 + Math.random() * 0.24 // 0.88 - 1.12
+                    const rawWidth = Math.round(aspect * tileHeightPx * jitter)
+                    const tileWidth = Math.max(160, Math.min(420, rawWidth))
 
-                  return (
-                    <div
-                      key={image.id}
-                      className="ticker-tile flex-shrink-0 h-[28vh] rounded-lg overflow-hidden bg-neutral-100"
-                      style={{ width: `${tileWidth}px` }}
-                    >
-                      <OptimizedGalleryImage
-                        src={image.url || "/placeholder.svg"}
-                        alt={`Ticker image`}
-                        width={tileWidth}
-                        height={tileHeightPx}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )
-                })}
-              </TickerTrack>
-            </div>
-          ))}
+                    return (
+                      <div
+                        key={image.id}
+                        className="ticker-tile flex-shrink-0 h-[28vh] rounded-lg overflow-hidden bg-neutral-100"
+                        style={{ width: `${tileWidth}px` }}
+                      >
+                        <OptimizedGalleryImage
+                          src={image.url || "/placeholder.svg"}
+                          alt={`Ticker image`}
+                          width={tileWidth}
+                          height={tileHeightPx}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )
+                  })}
+                </TickerTrack>
+              </div>
+            ))
+          )}
         </div>
       </Card>
     </div>
