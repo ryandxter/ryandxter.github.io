@@ -1,3 +1,4 @@
+import React from "react"
 import ResetPasswordForm from "@/components/ResetPasswordForm"
 
 export default function AdminResetPage() {
@@ -5,7 +6,9 @@ export default function AdminResetPage() {
   // will read the `token` from the URL via `useSearchParams` on the client.
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-6">
-      <ResetPasswordForm />
+      <React.Suspense fallback={<div className="p-6">Loading...</div>}>
+        <ResetPasswordForm />
+      </React.Suspense>
     </div>
   )
 }
