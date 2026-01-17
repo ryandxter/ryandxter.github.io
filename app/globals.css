@@ -195,6 +195,13 @@ body {
 
 
 @media (max-width: 420px) {
+  /* On small screens reduce main content bottom spacing so gallery follows immediately */
+  #main-container {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    min-height: 100vh !important;
+  }
+
   /* Reader mode: force static/friendly layout on small devices */
   .reader-mode .carousel-root,
   .reader-mode .ticker-root,
