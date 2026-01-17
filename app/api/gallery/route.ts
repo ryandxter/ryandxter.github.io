@@ -14,7 +14,14 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data)
+    // Return with aggressive caching for gallery data
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400", // 1 hour cache, 1 day stale
+        "CDN-Cache-Control": "max-age=3600",
+        "Expires": new Date(Date.now() + 3600000).toUTCString(),
+      },
+    })
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch gallery images" }, { status: 500 })
   }

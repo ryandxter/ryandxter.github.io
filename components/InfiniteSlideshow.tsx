@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import Image from "next/image"
+import { OptimizedGalleryImage } from "@/components/OptimizedGalleryImage"
 import React from "react"
 
 interface SlideImage {
@@ -78,12 +78,14 @@ export function InfiniteSlideshow() {
                           key={`${image.id}-${index}`}
                           className="flex-shrink-0 w-[300px] h-[28vh] rounded-lg overflow-hidden"
                         >
-                          <Image
+                          <OptimizedGalleryImage
                             src={image.url || "/placeholder.svg"}
                             alt={`Slideshow image ${index + 1}`}
                             width={300}
                             height={224}
                             className="w-full h-full object-cover"
+                            sizes="(max-width: 640px) 300px, (max-width: 1024px) 300px, 300px"
+                            quality={80}
                           />
                         </div>
                       ))
@@ -101,12 +103,14 @@ export function InfiniteSlideshow() {
                           key={`${image.id}-${index}-duplicate`}
                           className="flex-shrink-0 w-[300px] h-[28vh] rounded-lg overflow-hidden"
                         >
-                          <Image
+                          <OptimizedGalleryImage
                             src={image.url || "/placeholder.svg"}
                             alt={`Slideshow image ${index + 1}`}
                             width={300}
                             height={224}
                             className="w-full h-full object-cover"
+                            sizes="(max-width: 640px) 300px, (max-width: 1024px) 300px, 300px"
+                            quality={80}
                           />
                         </div>
                       ))

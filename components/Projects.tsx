@@ -1,7 +1,7 @@
 import { cvData } from "@/data/cv-data"
 import { Button } from "@/components/ui/button"
 import { ExternalLink, Github } from "lucide-react"
-import Image from "next/image"
+import { OptimizedGalleryImage } from "@/components/OptimizedGalleryImage"
 
 interface ProjectsProps {
   isLoaded: boolean
@@ -24,11 +24,14 @@ export function Projects({ isLoaded }: ProjectsProps) {
           >
             {project.image && (
               <div className="mb-4 w-full h-48 relative rounded-md overflow-hidden bg-neutral-100">
-                <Image
+                <OptimizedGalleryImage
                   src={project.image}
                   alt={project.title}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  width={600}
+                  height={192}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 600px"
+                  quality={85}
                 />
               </div>
             )}
