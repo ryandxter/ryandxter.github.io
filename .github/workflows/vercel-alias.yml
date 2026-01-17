@@ -1,0 +1,47 @@
+name: Set Vercel Alias
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  alias:
+    name: Alias latest production deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Get latest production deployment
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          echo "Fetching latest production deployment for project $VERCEL_PROJECT_ID"
+          resp=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&limit=1&target=production")
+          echo "$resp" | jq .
+          DEPLOYMENT_ID=$(echo "$resp" | jq -r '.deployments[0].uid')
+          if [ -z "$DEPLOYMENT_ID" ] || [ "$DEPLOYMENT_ID" = "null" ]; then
+            echo "No production deployment found; skipping alias step"
+            exit 0
+          fi
+          echo "Found deployment: $DEPLOYMENT_ID"
+          echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_ENV
+
+      - name: Create alias
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -z "$DEPLOYMENT_ID" ]; then
+            echo "No deployment id; skipping alias"
+            exit 0
+          fi
+          echo "Creating alias ryandxter.vercel.app -> deployment $DEPLOYMENT_ID"
+          curl -s -X POST "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID/aliases" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"deployment\":\"$DEPLOYMENT_ID\",\"alias\":\"ryandxter.vercel.app\"}" | jq .

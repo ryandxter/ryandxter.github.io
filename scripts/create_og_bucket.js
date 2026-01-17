@@ -13,7 +13,7 @@
 
     const listRes = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/buckets`, {
       method: 'GET',
-      headers: { Authorization: `Bearer ${SERVICE_KEY}` },
+      headers: { Authorization: `Bearer ${SERVICE_KEY}`, apikey: SERVICE_KEY },
     })
 
     if (!listRes.ok) {
@@ -23,14 +23,14 @@
     }
 
     const buckets = await listRes.json()
-    const exists = buckets.some((b) => b.id === 'og-images' || b.name === 'og-images')
+    const exists = buckets.some((b) => b.id === 'og' || b.name === 'og')
 
     if (exists) {
       console.log('Bucket og-images already exists')
       // try to ensure it's public by updating it
       const updateRes = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/bucket/og-images`, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${SERVICE_KEY}`, apikey: SERVICE_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({ public: true }),
       })
       if (!updateRes.ok) {
@@ -43,10 +43,10 @@
     }
 
     // create bucket
-    const body = { id: 'og-images', name: 'og-images', public: true }
+    const body = { id: 'og', name: 'og', public: true }
     const createRes = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/bucket`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${SERVICE_KEY}`, apikey: SERVICE_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
 

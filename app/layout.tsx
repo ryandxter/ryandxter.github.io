@@ -3,7 +3,7 @@ import { Inter } from "next/font/google"
 import type React from "react"
 import type { Metadata } from "next"
 import { DisableContextMenu } from "@/components/DisableContextMenu"
-import { cvData } from "@/data/cv-data"
+import { createClient } from "@/lib/supabase/server"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,37 +11,85 @@ const inter = Inter({
   variable: "--font-inter",
 })
 
-export const metadata: Metadata = {
-  title: `${cvData.personal.name} | Portfolio`,
-  description: "Riansyah Rizky Curriculum Vitae - R&D Photography Videography System",
-  authors: [{ name: "Riansyah Rizky" }],
-  creator: "Riansyah Rizky",
-  keywords: ["portfolio", "photography", "videography", "R&D", "Riansyah Rizky Poetra"],
-  generator: "v0.app",
-  openGraph: {
-    title: `${cvData.personal.name} | Portfolio`,
-    description: "Riansyah Rizky Curriculum Vitae - R&D Photography Videography System",
-    type: "website",
-    url: "https://v0-simple-portfolio-gm.vercel.app",
-    images: [
-      {
-        url: "/favicon.png",
-        width: 256,
-        height: 256,
-        alt: "Riansyah Rizky Logo",
+const DEFAULT_HOST = "ryandxter.vercel.app"
+
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const supabase = await createClient()
+    const { data: portfolio } = await supabase.from("portfolio_info").select("*").single()
+
+    const name = portfolio?.name || "Riansyah Rizky"
+    const title = portfolio?.title || portfolio?.career_name || "Portfolio"
+    const description = portfolio?.og_description || portfolio?.bio || "Riansyah Rizky Curriculum Vitae - R&D Photography Videography System"
+    const image = portfolio?.og_image_url || `https://${DEFAULT_HOST}/favicon.png`
+
+    return {
+      title: `${name} | ${title}`,
+      description,
+      authors: [{ name }],
+      creator: name,
+      keywords: ["portfolio", "photography", "videography", "R&D", name],
+      generator: "v0.app",
+      metadataBase: new URL(`https://${DEFAULT_HOST}`),
+      openGraph: {
+        title: `${name} | ${title}`,
+        description,
+        type: "website",
+        url: `https://${DEFAULT_HOST}`,
+        siteName: DEFAULT_HOST,
+        images: [
+          {
+            url: image,
+            width: 1200,
+            height: 630,
+            alt: `${name} social image`,
+          },
+        ],
       },
-    ],
-  },
-  icons: {
-    icon: [
-      {
-        url: "/favicon.png",
-        sizes: "256x256",
-        type: "image/png",
+      icons: {
+        icon: [
+          {
+            url: `https://${DEFAULT_HOST}/favicon.png`,
+            sizes: "256x256",
+            type: "image/png",
+          },
+        ],
+        apple: `https://${DEFAULT_HOST}/favicon.png`,
       },
-    ],
-    apple: "/favicon.png",
-  },
+    }
+  } catch (err) {
+    // fallback to reasonable defaults if supabase call fails
+    return {
+      title: `Riansyah Rizky | Portfolio`,
+      description: "Riansyah Rizky Curriculum Vitae - R&D Photography Videography System",
+      metadataBase: new URL(`https://${DEFAULT_HOST}`),
+      openGraph: {
+        title: `Riansyah Rizky | Portfolio`,
+        description: "Riansyah Rizky Curriculum Vitae - R&D Photography Videography System",
+        type: "website",
+        url: `https://${DEFAULT_HOST}`,
+        siteName: DEFAULT_HOST,
+        images: [
+          {
+            url: `https://${DEFAULT_HOST}/favicon.png`,
+            width: 256,
+            height: 256,
+            alt: "Riansyah Rizky Logo",
+          },
+        ],
+      },
+      icons: {
+        icon: [
+          {
+            url: `https://${DEFAULT_HOST}/favicon.png`,
+            sizes: "256x256",
+            type: "image/png",
+          },
+        ],
+        apple: `https://${DEFAULT_HOST}/favicon.png`,
+      },
+    }
+  }
 }
 
 export default function RootLayout({
