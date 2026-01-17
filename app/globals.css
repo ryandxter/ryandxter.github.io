@@ -144,4 +144,51 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Slideshow linear slide animations (controlled via JS) */
+  @keyframes slide-left {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes slide-right {
+    from {
+      transform: translateX(-50%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .animate-slide-left {
+    animation: slide-left 20s linear infinite;
+    animation-play-state: running;
+    will-change: transform;
+  }
+
+  .animate-slide-right {
+    animation: slide-right 20s linear infinite;
+    animation-play-state: running;
+    will-change: transform;
+  }
+
+  .paused-animation {
+    animation-play-state: paused !important;
+  }
+
+  /* Legacy class: make it inert by default so it doesn't auto-play */
+  .animate-loop-left-to-right {
+    animation: none !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-slide-left,
+    .animate-slide-right {
+      animation: none !important;
+    }
+  }
 }

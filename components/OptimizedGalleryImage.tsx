@@ -30,6 +30,13 @@ export function OptimizedGalleryImage({
   sizes = "(max-width: 640px) 90vw, (max-width: 1024px) 50vw, 33vw",
   quality = 75,
 }: OptimizedGalleryImageProps) {
+  // adjust quality based on devicePixelRatio and Save-Data network hint
+  const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
+  const connection = typeof navigator !== "undefined" ? (navigator as any).connection || {} : {}
+  const saveData = connection.saveData === true
+  let computedQuality = Math.max(40, Math.min(quality, Math.round(quality / dpr)))
+  if (saveData) computedQuality = Math.min(computedQuality, 50)
+
   return (
     <Image
       src={src}
@@ -38,12 +45,11 @@ export function OptimizedGalleryImage({
       height={height}
       className={className}
       priority={priority}
-      quality={quality}
+      quality={computedQuality}
       sizes={sizes}
       loading={priority ? "eager" : "lazy"}
       placeholder="empty"
       onError={(e) => {
-        // Fallback for broken images
         const img = e.target as HTMLImageElement
         img.src = "/placeholder.svg"
       }}

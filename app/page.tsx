@@ -111,11 +111,28 @@ export default function Portfolio() {
     setPasswordError(null)
   }
 
+  const mainRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const el = mainRef.current
+    if (!el) return
+
+    const applyMargin = () => {
+      // set bottom margin equal to viewport height so gallery (fixed) can fully display without overscroll
+      el.style.marginBottom = `${window.innerHeight}px`
+    }
+
+    applyMargin()
+    window.addEventListener("resize", applyMargin)
+    return () => window.removeEventListener("resize", applyMargin)
+  }, [])
+
   return (
     <main className="relative flex flex-col items-center bg-white min-h-screen font-sans">
       <div
         id="main-container"
-        className="w-full min-h-screen bg-white z-10 px-4 sm:px-6 md:px-8 py-6 sm:py-8 mb-[1500px] transition-all duration-500 ease-in-out shadow-[0_0_20px_rgba(0,0,0,0.1)]"
+        ref={mainRef}
+        className="w-full min-h-screen bg-white z-10 px-4 sm:px-6 md:px-8 py-6 sm:py-8 transition-all duration-500 ease-in-out shadow-[0_0_20px_rgba(0,0,0,0.1)]"
       >
         <div className="mb-8 sm:mb-16 w-full max-w-[400px] mx-auto bg-white">
           <div className="flex flex-col gap-8 sm:gap-12 p-0 sm:p-4">

@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState, useRef, useCallback } from "react"
+import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { Card } from "@/components/ui/card"
-import BackgroundPaths from "@/components/kokonutui/background-paths"
 import Image from "next/image"
+import { OptimizedGalleryImage } from "./OptimizedGalleryImage"
 import React from "react"
 
 interface TickerImage {
@@ -16,59 +16,108 @@ interface TickerTrackProps {
   children: React.ReactNode
   direction?: "toLeft" | "toRight"
   speed?: number
+  globalEnabled?: boolean
 }
 
-const TickerTrack: React.FC<TickerTrackProps> = ({ children, direction = "toRight", speed = 30 }) => {
-  const [movePosition, setMovePosition] = useState(0)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const requestRef = useRef<number>()
-  const previousTimeRef = useRef<number>()
-  const multiplier = direction === "toLeft" ? -1 : 1
-
-  const animate = useCallback(
-    (time: number) => {
-      if (previousTimeRef.current !== undefined) {
-        const deltaTime = time - previousTimeRef.current
-        const movement = ((deltaTime * speed) / 1000) * multiplier
-
-        setMovePosition((prevPos) => {
-          const contentWidth = contentRef.current?.offsetWidth || 0
-          const adjustedContentWidth = contentWidth / 2
-          if (direction === "toLeft" && prevPos <= -adjustedContentWidth) {
-            return 0
-          }
-          if (direction === "toRight" && prevPos >= 0) {
-            return -adjustedContentWidth
-          }
-          return prevPos + movement
-        })
-      }
-      previousTimeRef.current = time
-      requestRef.current = requestAnimationFrame(animate)
-    },
-    [speed, direction, multiplier],
-  )
+const TickerTrack: React.FC<TickerTrackProps> = ({ children, direction = "toRight", globalEnabled = false }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const contentRef = useRef<HTMLDivElement | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const velocityRef = useRef(0)
+  const posRef = useRef(0)
+  const visibleRef = useRef(false)
 
   useEffect(() => {
-    requestRef.current = requestAnimationFrame(animate)
-    return () => {
-      if (requestRef.current) {
-        cancelAnimationFrame(requestRef.current)
+    const el = containerRef.current
+    if (!el) return
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        visibleRef.current = entry.isIntersecting
+      })
+    }, { threshold: 0.1 })
+
+    io.observe(el)
+
+    let prevY = typeof window !== "undefined" ? window.scrollY : 0
+
+    const onScroll = () => {
+      if (!visibleRef.current) return
+      const y = window.scrollY
+      const delta = y - prevY
+      prevY = y
+      const dir = direction === "toLeft" ? -1 : 1
+      velocityRef.current += delta * 0.3 * dir
+      
+      startLoop()
+    }
+
+    const onWheel = (e: WheelEvent) => {
+      if (!visibleRef.current) return
+      const dir = direction === "toLeft" ? -1 : 1
+      velocityRef.current += e.deltaY * 0.6 * dir
+      startLoop()
+    }
+
+    let touchStartY: number | null = null
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches?.[0]?.clientY ?? null
+    }
+    const onTouchMove = (e: TouchEvent) => {
+      if (!visibleRef.current) return
+      const y = e.touches?.[0]?.clientY ?? null
+      if (y != null && touchStartY != null) {
+        const delta = touchStartY - y
+        touchStartY = y
+        const dir = direction === "toLeft" ? -1 : 1
+        velocityRef.current += delta * 0.6 * dir
+        startLoop()
       }
     }
-  }, [animate])
+
+    const startLoop = () => {
+      if (rafRef.current != null) return
+      const step = () => {
+        posRef.current += velocityRef.current
+        velocityRef.current *= 0.85
+        if (contentRef.current) {
+          contentRef.current.style.transform = `translateX(${posRef.current}px)`
+        }
+        if (Math.abs(velocityRef.current) < 0.1) {
+          if (Math.abs(posRef.current) > 0.5) {
+            posRef.current *= 0.9
+            if (contentRef.current) contentRef.current.style.transform = `translateX(${posRef.current}px)`
+            rafRef.current = requestAnimationFrame(step)
+          } else {
+            posRef.current = 0
+            if (contentRef.current) contentRef.current.style.transform = `translateX(0px)`
+            rafRef.current = null
+          }
+        } else {
+          rafRef.current = requestAnimationFrame(step)
+        }
+      }
+      rafRef.current = requestAnimationFrame(step)
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true })
+    window.addEventListener("wheel", onWheel, { passive: true })
+    window.addEventListener("touchstart", onTouchStart, { passive: true })
+    window.addEventListener("touchmove", onTouchMove, { passive: true })
+
+    return () => {
+      io.disconnect()
+      window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("wheel", onWheel)
+      window.removeEventListener("touchstart", onTouchStart)
+      window.removeEventListener("touchmove", onTouchMove)
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+  }, [direction, globalEnabled])
 
   return (
     <div ref={containerRef} className="relative overflow-hidden w-full h-full">
-      <div
-        ref={contentRef}
-        className="absolute flex gap-4 md:gap-6 lg:gap-9"
-        style={{
-          transform: `translateX(${movePosition}px)`,
-          width: "max-content",
-        }}
-      >
+      <div ref={contentRef} className="flex gap-4 md:gap-6 lg:gap-9" style={{ width: "max-content", transform: "translateX(0px)" }}>
         {children}
         {React.Children.map(children, (child) => React.cloneElement(child as React.ReactElement))}
       </div>
@@ -82,6 +131,123 @@ export function Ticker() {
   const [tickerImages, setTickerImages] = useState<{ [key: string]: TickerImage[] }>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const rows = useMemo(() => Object.entries(tickerImages).sort(([rowA], [rowB]) => {
+    const numA = Number.parseInt(rowA.replace("row", ""))
+    const numB = Number.parseInt(rowB.replace("row", ""))
+    return numA - numB
+  }), [tickerImages])
+
+  const topRowRef = useRef<HTMLDivElement | null>(null)
+  const bottomRowRef = useRef<HTMLDivElement | null>(null)
+  const [globalEnabled, setGlobalEnabled] = useState(false)
+
+  useEffect(() => {
+    const topEl = topRowRef.current
+    const bottomEl = bottomRowRef.current
+    if (!topEl || !bottomEl) return
+    let topVisible = false
+    let bottomVisible = false
+
+    // hysteresis: delay disabling so brief re-intersections don't flip the gate
+    const hysteresisMs = 150
+    const disableTimeout = { current: null as number | null }
+
+    // compute globalEnabled using bounding rects — more deterministic than relying on two observers
+    const updateGlobalEnabled = () => {
+      try {
+        const topRect = topEl.getBoundingClientRect()
+        const bottomRect = bottomEl.getBoundingClientRect()
+        // enable when bottom row is (at least partially) visible AND top row is scrolled above viewport
+        const computed = bottomRect.top < window.innerHeight && topRect.bottom < 0
+
+        // when computed becomes true, enable immediately and cancel any pending disable
+        if (computed) {
+          if (disableTimeout.current != null) {
+            window.clearTimeout(disableTimeout.current)
+            disableTimeout.current = null
+          }
+          setGlobalEnabled(true)
+        } else {
+          // schedule disable after hysteresisMs unless re-enabled
+          if (disableTimeout.current == null) {
+            disableTimeout.current = window.setTimeout(() => {
+              setGlobalEnabled(false)
+              disableTimeout.current = null
+            }, hysteresisMs)
+          }
+        }
+
+        // no debug logging
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    const topIo = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        topVisible = e.isIntersecting
+        updateGlobalEnabled()
+      })
+    }, { threshold: 0.1 })
+
+    const bottomIo = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        bottomVisible = e.isIntersecting
+        updateGlobalEnabled()
+      })
+    }, { threshold: 0.1 })
+
+    topIo.observe(topEl)
+    bottomIo.observe(bottomEl)
+
+    // recompute on scroll/resize to avoid missed states
+    window.addEventListener("scroll", updateGlobalEnabled, { passive: true })
+    window.addEventListener("resize", updateGlobalEnabled)
+    // initial compute
+    updateGlobalEnabled()
+
+    return () => {
+      topIo.disconnect()
+      bottomIo.disconnect()
+      window.removeEventListener("scroll", updateGlobalEnabled)
+      window.removeEventListener("resize", updateGlobalEnabled)
+      if (disableTimeout.current != null) window.clearTimeout(disableTimeout.current)
+    }
+  }, [rows])
+
+  // block page vertical scrolling while gallery is in control
+  useEffect(() => {
+    const wheelBlock = (e: WheelEvent) => {
+      if (globalEnabled) {
+        e.preventDefault()
+      }
+    }
+
+    const touchMoveBlock = (e: TouchEvent) => {
+      if (globalEnabled) {
+        e.preventDefault()
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("wheel", wheelBlock as EventListener, { passive: false, capture: true })
+      window.addEventListener("touchmove", touchMoveBlock as EventListener, { passive: false, capture: true })
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("wheel", wheelBlock as EventListener, { capture: true })
+        window.removeEventListener("touchmove", touchMoveBlock as EventListener, { capture: true })
+      }
+    }
+  }, [globalEnabled])
+
+  useEffect(() => {
+    try {
+      // no debug logging
+    } catch (e) {}
+  }, [globalEnabled])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -190,50 +356,56 @@ export function Ticker() {
         isVisible ? "translate-y-0" : "translate-y-full"
       }`}
       style={{ opacity }}
+      onContextMenu={(e) => e.preventDefault()}
+      onMouseDown={(e) => e.preventDefault()}
+      onDoubleClick={(e) => e.preventDefault()}
+      // disable selection on the gallery
+      data-no-select
     >
-      <Card className="w-full h-full bg-[#fafafa] p-2 sm:p-4 lg:p-6 overflow-hidden relative">
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <BackgroundPaths backgroundOnly />
-        </div>
+      <Card
+        className="w-full h-full bg-[#fafafa] p-2 sm:p-4 lg:p-6 overflow-hidden relative"
+        style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}
+      >
+        {/* plain background for gallery - background flow module removed */}
         <div className="w-full h-full flex flex-col justify-between gap-4 md:gap-6 lg:gap-9 relative z-10">
-          {Object.entries(tickerImages)
-            .sort(([rowA], [rowB]) => {
-              const numA = Number.parseInt(rowA.replace("row", ""))
-              const numB = Number.parseInt(rowB.replace("row", ""))
-              return numA - numB
-            })
-            .map(([row, images], rowIndex) => (
-              <div key={row} className="relative h-[28vh]">
-                <TickerTrack direction={rowIndex % 2 === 0 ? "toRight" : "toLeft"} speed={20}>
-                  {images.map((image) => {
-                    const aspect = image.aspect || 16 / 9
-                    // compute tile height in px based on 28vh
-                    const tileHeightPx = Math.round(window.innerHeight * 0.28)
-                    // base width is aspect * height; add slight randomness for variety
-                    const jitter = 0.88 + Math.random() * 0.24 // 0.88 - 1.12
-                    const rawWidth = Math.round(aspect * tileHeightPx * jitter)
-                    const tileWidth = Math.max(160, Math.min(420, rawWidth))
+          {rows.map(([row, images], rowIndex) => (
+            <div
+              key={row}
+              className="relative h-[28vh]"
+              ref={(el) => {
+                if (rowIndex === 0) topRowRef.current = el
+                if (rowIndex === rows.length - 1) bottomRowRef.current = el
+              }}
+            >
+              <TickerTrack direction={rowIndex % 2 === 0 ? "toRight" : "toLeft"} speed={20} globalEnabled={globalEnabled}>
+                {images.map((image) => {
+                  const aspect = image.aspect || 16 / 9
+                  // compute tile height in px based on 28vh
+                  const tileHeightPx = Math.round(window.innerHeight * 0.28)
+                  // base width is aspect * height; add slight randomness for variety
+                  const jitter = 0.88 + Math.random() * 0.24 // 0.88 - 1.12
+                  const rawWidth = Math.round(aspect * tileHeightPx * jitter)
+                  const tileWidth = Math.max(160, Math.min(420, rawWidth))
 
-                    return (
-                      <div
-                        key={image.id}
-                        className="flex-shrink-0 h-[28vh] rounded-lg overflow-hidden bg-neutral-100"
-                        style={{ width: `${tileWidth}px` }}
-                      >
-                        <img
-                          src={image.url || "/placeholder.svg"}
-                          alt={`Ticker image`}
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                          onError={(e) => {
-                            ;(e.target as HTMLImageElement).src = "/placeholder.svg"
-                          }}
-                        />
-                      </div>
-                    )
-                  })}
-                </TickerTrack>
-              </div>
-            ))}
+                  return (
+                    <div
+                      key={image.id}
+                      className="flex-shrink-0 h-[28vh] rounded-lg overflow-hidden bg-neutral-100"
+                      style={{ width: `${tileWidth}px` }}
+                    >
+                      <OptimizedGalleryImage
+                        src={image.url || "/placeholder.svg"}
+                        alt={`Ticker image`}
+                        width={tileWidth}
+                        height={tileHeightPx}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )
+                })}
+              </TickerTrack>
+            </div>
+          ))}
         </div>
       </Card>
     </div>

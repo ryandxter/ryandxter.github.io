@@ -68,8 +68,23 @@ export function AutoCarousel() {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (files) {
-      const newImages = Array.from(files).map((file) => URL.createObjectURL(file))
-      setImages((prevImages) => [...prevImages, ...newImages])
+      ;(async () => {
+        const uploaded: string[] = []
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i]
+          const form = new FormData()
+          form.append("file", file)
+          try {
+            const res = await fetch("/api/uploads/gallery", { method: "POST", body: form })
+            if (!res.ok) continue
+            const body = await res.json()
+            if (body && body.url) uploaded.push(body.url)
+          } catch (e) {
+            // ignore
+          }
+        }
+        if (uploaded.length > 0) setImages((prevImages) => [...prevImages, ...uploaded])
+      })()
     }
   }
 

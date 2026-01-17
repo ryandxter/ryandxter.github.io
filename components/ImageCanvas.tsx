@@ -46,13 +46,30 @@ export function ImageCanvas() {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (files) {
-      const newImages = Array.from(files).map((file) => ({
-        id: Math.random().toString(36).substr(2, 9),
-        src: URL.createObjectURL(file),
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-      }))
-      setImages((prevImages) => [...prevImages, ...newImages])
+      ;(async () => {
+        const uploaded: ImagePosition[] = []
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i]
+          const form = new FormData()
+          form.append("file", file)
+          try {
+            const res = await fetch("/api/uploads/gallery", { method: "POST", body: form })
+            if (!res.ok) continue
+            const body = await res.json()
+            if (body && body.url) {
+              uploaded.push({
+                id: Math.random().toString(36).substr(2, 9),
+                src: body.url,
+                x: Math.random() * 100,
+                y: Math.random() * 100,
+              })
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+        if (uploaded.length > 0) setImages((prevImages) => [...prevImages, ...uploaded])
+      })()
     }
   }
 
