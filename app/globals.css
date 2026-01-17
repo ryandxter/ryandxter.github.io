@@ -227,3 +227,38 @@ body {
   }
 }
 
+/* Ticker: in reader-mode on small screens make a 2-column stacked grid */
+@media (max-width: 420px) {
+  .reader-mode .ticker-root {
+    padding: 0 !important;
+  }
+
+  .reader-mode .ticker-content {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: auto !important;
+    gap: 0.5rem !important;
+    width: auto !important;
+    transform: none !important;
+  }
+
+  .reader-mode .ticker-content > * {
+    flex: none !important;
+    width: 100% !important;
+  }
+
+  .reader-mode .ticker-tile {
+    height: auto !important;
+    aspect-ratio: auto !important;
+    overflow: hidden !important;
+  }
+
+  .reader-mode .ticker-tile img,
+  .reader-mode .ticker-tile picture,
+  .reader-mode .ticker-tile .next-image {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: cover !important;
+  }
+}
+
