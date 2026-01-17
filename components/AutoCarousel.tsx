@@ -94,7 +94,7 @@ export function AutoCarousel() {
 
   return (
     <div
-      className={`fixed left-0 right-0 bottom-0 h-[900px] z-0 transition-all duration-500 ease-in-out ${
+      className={`carousel-root fixed left-0 right-0 bottom-0 h-[900px] z-0 transition-all duration-500 ease-in-out ${
         isVisible ? "translate-y-0" : "translate-y-full"
       }`}
       style={{ opacity }}
@@ -103,11 +103,11 @@ export function AutoCarousel() {
         <div className="w-full max-w-7xl mx-auto h-full flex flex-col justify-center gap-8">
           {[emblaRef1, emblaRef2, emblaRef3].map((ref, rowIndex) => (
             <div key={rowIndex} className="overflow-hidden" ref={ref}>
-              <div className="flex gap-4 animate-slide-row">
+              <div className="carousel-content flex gap-4 animate-slide-row">
                 {images.map((image, index) => (
                   <div
                     key={index}
-                    className="flex-shrink-0 w-[300px] aspect-video bg-white rounded-lg shadow-md overflow-hidden"
+                    className="carousel-tile flex-shrink-0 w-[300px] aspect-video bg-white rounded-lg shadow-md overflow-hidden"
                   >
                     <Image
                       src={image || "/placeholder.svg"}

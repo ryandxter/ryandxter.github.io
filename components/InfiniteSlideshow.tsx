@@ -308,8 +308,8 @@ export function InfiniteSlideshow() {
     }, [rowIndex, rootRef, globalEnabled])
 
     return (
-      <div ref={containerRef} className="relative overflow-visible h-[28vh]">
-        <div ref={contentRef} className="absolute inset-0 flex gap-9" style={{ width: "200%", transform: "translateX(0px)" }}>
+      <div ref={containerRef} className="slideshow-row relative overflow-visible h-[28vh]">
+        <div ref={contentRef} className="slideshow-content absolute inset-0 flex gap-9" style={{ width: "200%", transform: "translateX(0px)" }}>
           {children}
         </div>
       </div>
@@ -318,7 +318,7 @@ export function InfiniteSlideshow() {
 
   return (
     <div
-      className={`fixed left-0 right-0 bottom-0 h-screen z-0 transition-all duration-500 ease-in-out ${
+      className={`slideshow-root fixed left-0 right-0 bottom-0 h-screen z-0 transition-all duration-500 ease-in-out ${
         isVisible ? "translate-y-0" : "translate-y-full"
       }`}
       style={{ opacity }}
@@ -339,7 +339,7 @@ export function InfiniteSlideshow() {
                     ? [...slideshowImages[rowIndex], ...slideshowImages[rowIndex]].map((image, index) => (
                         <div
                           key={`${image.id}-${index}`}
-                          className="flex-shrink-0 w-[300px] h-[28vh] rounded-lg overflow-hidden"
+                          className="slideshow-tile flex-shrink-0 w-[300px] h-[28vh] rounded-lg overflow-hidden"
                         >
                           <OptimizedGalleryImage
                             src={image.url || "/placeholder.svg"}

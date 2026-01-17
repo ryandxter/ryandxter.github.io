@@ -117,7 +117,7 @@ const TickerTrack: React.FC<TickerTrackProps> = ({ children, direction = "toRigh
 
   return (
     <div ref={containerRef} className="relative overflow-hidden w-full h-full">
-      <div ref={contentRef} className="flex gap-4 md:gap-6 lg:gap-9" style={{ width: "max-content", transform: "translateX(0px)" }}>
+      <div ref={contentRef} className="ticker-content flex gap-4 md:gap-6 lg:gap-9" style={{ width: "max-content", transform: "translateX(0px)" }}>
         {children}
         {React.Children.map(children, (child) => React.cloneElement(child as React.ReactElement))}
       </div>
@@ -352,7 +352,7 @@ export function Ticker() {
 
   return (
     <div
-      className={`fixed left-0 right-0 bottom-0 h-screen z-0 transition-all duration-500 ease-in-out ${
+      className={`ticker-root fixed left-0 right-0 bottom-0 h-screen z-0 transition-all duration-500 ease-in-out ${
         isVisible ? "translate-y-0" : "translate-y-full"
       }`}
       style={{ opacity }}
@@ -390,7 +390,7 @@ export function Ticker() {
                   return (
                     <div
                       key={image.id}
-                      className="flex-shrink-0 h-[28vh] rounded-lg overflow-hidden bg-neutral-100"
+                      className="ticker-tile flex-shrink-0 h-[28vh] rounded-lg overflow-hidden bg-neutral-100"
                       style={{ width: `${tileWidth}px` }}
                     >
                       <OptimizedGalleryImage

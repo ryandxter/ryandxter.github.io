@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import type React from "react"
 import type { Metadata } from "next"
 import { DisableContextMenu } from "@/components/DisableContextMenu"
+import ReaderMode from "@/components/ReaderMode"
 import { createClient } from "@/lib/supabase/server"
 
 const inter = Inter({
@@ -107,6 +108,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="font-sans">
         <DisableContextMenu />
+        <ReaderMode />
         {children}
       </body>
     </html>

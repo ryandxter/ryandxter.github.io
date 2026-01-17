@@ -171,7 +171,7 @@ export function ImageCanvas() {
 
   return (
     <div
-      className={`fixed left-0 right-0 bottom-0 h-[900px] z-0 transition-all duration-500 ease-in-out ${
+      className={`canvas-root fixed left-0 right-0 bottom-0 h-[900px] z-0 transition-all duration-500 ease-in-out ${
         isVisible ? "translate-y-0" : "translate-y-full"
       }`}
       style={{ opacity }}
@@ -190,6 +190,7 @@ export function ImageCanvas() {
         onMouseLeave={handleMouseUp}
       >
         <div
+          className="canvas-content"
           style={{
             transform: `scale(${zoom}) translate(${panOffset.x / zoom}px, ${panOffset.y / zoom}px)`,
             transformOrigin: "0 0",
@@ -202,7 +203,7 @@ export function ImageCanvas() {
           {images.map((image) => (
             <div
               key={image.id}
-              className="absolute"
+              className="canvas-tile absolute"
               style={{
                 top: `${image.y}%`,
                 left: `${image.x}%`,
