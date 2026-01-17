@@ -249,7 +249,7 @@ body {
 
   .reader-mode .ticker-tile {
     height: auto !important;
-    aspect-ratio: auto !important;
+    aspect-ratio: 1 / 1 !important;
     overflow: hidden !important;
   }
 
@@ -258,6 +258,46 @@ body {
   .reader-mode .ticker-tile .next-image {
     width: 100% !important;
     height: auto !important;
+    object-fit: cover !important;
+  }
+}
+
+/* Force 1:1 square tiles for all galleries in reader-mode on small screens */
+@media (max-width: 420px) {
+  .reader-mode .carousel-tile,
+  .reader-mode .ticker-tile,
+  .reader-mode .slideshow-tile,
+  .reader-mode .canvas-tile {
+    width: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    height: auto !important;
+    overflow: hidden !important;
+    display: block !important;
+  }
+
+  .reader-mode .carousel-content,
+  .reader-mode .slideshow-content,
+  .reader-mode .canvas-content {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    display: grid !important;
+    gap: 0.5rem !important;
+    width: auto !important;
+  }
+
+  .reader-mode .carousel-tile img,
+  .reader-mode .ticker-tile img,
+  .reader-mode .slideshow-tile img,
+  .reader-mode .canvas-tile img,
+  .reader-mode .carousel-tile picture,
+  .reader-mode .ticker-tile picture,
+  .reader-mode .slideshow-tile picture,
+  .reader-mode .canvas-tile picture,
+  .reader-mode .carousel-tile .next-image,
+  .reader-mode .ticker-tile .next-image,
+  .reader-mode .slideshow-tile .next-image,
+  .reader-mode .canvas-tile .next-image {
+    width: 100% !important;
+    height: 100% !important;
     object-fit: cover !important;
   }
 }
