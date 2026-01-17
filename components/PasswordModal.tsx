@@ -17,6 +17,7 @@ export function PasswordModal({ isOpen, onAuthenticate, onError }: PasswordModal
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,6 +50,30 @@ export function PasswordModal({ isOpen, onAuthenticate, onError }: PasswordModal
     }
   }
 
+  const handleSendReset = async () => {
+    setError(null)
+    setInfo(null)
+    setIsLoading(true)
+    try {
+      const res = await fetch("/api/auth/reset-password", { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || "Failed to request reset link")
+      } else {
+        if (data.token) {
+          // SMTP not configured — return token for dev use
+          setInfo(`Reset token (dev): ${data.token}`)
+        } else {
+          setInfo(data.message || `Reset link sent to your personal email`)
+        }
+      }
+    } catch (err) {
+      setError("Failed to contact server")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   if (!isOpen) return null
 
   return (
@@ -69,8 +94,12 @@ export function PasswordModal({ isOpen, onAuthenticate, onError }: PasswordModal
               autoFocus
             />
             {error && <p className="text-sm text-red-600">{error}</p>}
+            {info && <p className="text-sm text-green-600 break-words">{info}</p>}
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Verifying..." : "Unlock Dashboard"}
+            </Button>
+            <Button type="button" variant="ghost" className="w-full mt-2" onClick={handleSendReset} disabled={isLoading}>
+              Send reset link to personal email
             </Button>
           </form>
         </CardContent>
