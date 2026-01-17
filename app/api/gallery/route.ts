@@ -14,14 +14,28 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Return with aggressive caching for gallery data
-    return NextResponse.json(data, {
-      headers: {
-        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400", // 1 hour cache, 1 day stale
-        "CDN-Cache-Control": "max-age=3600",
-        "Expires": new Date(Date.now() + 3600000).toUTCString(),
-      },
+    // Remove any entries that reference session-scoped object URLs (blob:)
+    const sanitized = (data || []).filter((row) => {
+      try {
+        return !(row.image_url && String(row.image_url).startsWith("blob:"))
+      } catch (e) {
+        return true
+      }
     })
+
+    const removedCount = (data || []).length - sanitized.length
+
+    // Return with aggressive caching for gallery data
+    const headers: Record<string, string> = {
+      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+      "CDN-Cache-Control": "max-age=3600",
+      "Expires": new Date(Date.now() + 3600000).toUTCString(),
+    }
+    if (removedCount > 0) {
+      headers["X-Removed-Blob-Count"] = String(removedCount)
+    }
+
+    return NextResponse.json(sanitized, { headers })
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch gallery images" }, { status: 500 })
   }
