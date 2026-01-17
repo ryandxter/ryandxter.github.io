@@ -41,69 +41,46 @@ export function GalleryImagesForm({ images, onRefresh }: GalleryImagesFormProps)
     setIsLoading(true)
     try {
       // Block session-scoped object URLs from being saved
-      if (imageUrl.trim().startsWith("blob:")) {
-        setError("Blob/object URLs are not allowed. Use the original remote URL so the server can import and cache it.")
+      if (imageUrl.trim().startsWith("blob:") || imageUrl.trim().startsWith("data:")) {
+        setError("Blob/object or data URLs are not allowed. Use the original remote URL so the server can import and cache it.")
         setIsLoading(false)
         return
       }
       if (editingId) {
-        // update existing record
-        const response = await fetch(`/api/gallery/${editingId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ row_number: Number.parseInt(rowNumber), image_url: imageUrl, position: Number.parseInt(position) }),
-        })
-        if (!response.ok) throw new Error("Failed to update image")
-      } else {
-        // For new images: attempt server-side import (fetch + upload) to canonicalize and cache
-        let publicUrl: string | null = null
-
-        try {
-          const importRes = await fetch("/api/uploads/gallery/import", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items: [{ url: imageUrl, row_number: Number.parseInt(rowNumber), position: Number.parseInt(position) }] }),
-          })
-
-          if (!importRes.ok) {
-            throw new Error("Import failed")
-          }
-
-          const importBody = await importRes.json()
-          const first = Array.isArray(importBody?.results) ? importBody.results[0] : null
-          if (first && first.ok && first.publicUrl) {
-            publicUrl = first.publicUrl
-            // If server already inserted a record, we're done
-            if (first.record) {
-              // refresh list
-              setRowNumber("1")
-              setImageUrl("")
-              setPosition("0")
-              await onRefresh()
-              return
-            }
-          }
-        } catch (importErr) {
-          // fallthrough to create-by-URL path
-          console.warn("Import endpoint failed, falling back to direct create:", importErr)
-        }
-
-        // If import did not yield a publicUrl, or didn't insert, create gallery row using publicUrl or original URL
-        const createBody = {
-          row_number: Number.parseInt(rowNumber),
-          image_url: publicUrl ?? imageUrl,
-          position: Number.parseInt(position),
-        }
-
-        const createRes = await fetch("/api/gallery", {
+        // update existing record via import CRUD endpoint
+        const importRes = await fetch(`/api/uploads/gallery/import`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(createBody),
+          body: JSON.stringify({ items: [{ action: "update", id: editingId, url: imageUrl, row_number: Number.parseInt(rowNumber), position: Number.parseInt(position) }] }),
         })
 
-        if (!createRes.ok) {
-          const body = await createRes.json().catch(() => ({}))
-          throw new Error(body?.error || "Failed to create gallery image")
+        if (!importRes.ok) {
+          const body = await importRes.json().catch(() => ({}))
+          throw new Error(body?.error || "Failed to update image via import endpoint")
+        }
+      } else {
+        // For new images: attempt server-side import (fetch + upload) to canonicalize and cache
+        // create via import CRUD endpoint
+        const importRes = await fetch("/api/uploads/gallery/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: [{ action: "create", url: imageUrl, row_number: Number.parseInt(rowNumber), position: Number.parseInt(position) }] }),
+        })
+
+        if (!importRes.ok) {
+          const body = await importRes.json().catch(() => ({}))
+          throw new Error(body?.error || "Failed to create image via import endpoint")
+        }
+
+        const importBody = await importRes.json().catch(() => ({}))
+        const first = Array.isArray(importBody?.results) ? importBody.results[0] : null
+        if (first && first.ok && first.record) {
+          // inserted record present
+          setRowNumber("1")
+          setImageUrl("")
+          setPosition("0")
+          await onRefresh()
+          return
         }
       }
 
@@ -130,8 +107,17 @@ export function GalleryImagesForm({ images, onRefresh }: GalleryImagesFormProps)
     if (!confirm("Delete this image?")) return
 
     try {
-      const response = await fetch(`/api/gallery/${id}`, { method: "DELETE" })
-      if (!response.ok) throw new Error("Failed to delete")
+      const importRes = await fetch(`/api/uploads/gallery/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [{ action: "delete", id }] }),
+      })
+
+      if (!importRes.ok) {
+        const body = await importRes.json().catch(() => ({}))
+        throw new Error(body?.error || "Failed to delete via import endpoint")
+      }
+
       await onRefresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete")
@@ -230,16 +216,20 @@ export function GalleryImagesForm({ images, onRefresh }: GalleryImagesFormProps)
                         .map((img) => (
                           <div key={img.id} className="flex items-start gap-4 p-4 border rounded-lg">
                             <div className="flex-shrink-0 w-24 h-24 bg-neutral-100 rounded overflow-hidden">
-                              <Image
-                                src={img.image_url || "/placeholder.svg"}
-                                alt="Gallery"
-                                width={96}
-                                height={96}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.src = "/placeholder.svg"
-                                }}
-                              />
+                              {typeof img.image_url === "string" && (img.image_url.startsWith("blob:") || img.image_url.startsWith("data:")) ? (
+                                <img src="/placeholder.svg" alt="Gallery placeholder" className="w-full h-full object-cover" />
+                              ) : (
+                                <Image
+                                  src={img.image_url || "/placeholder.svg"}
+                                  alt="Gallery"
+                                  width={96}
+                                  height={96}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.src = "/placeholder.svg"
+                                  }}
+                                />
+                              )}
                             </div>
                             <div className="flex-1">
                               <p className="text-sm text-neutral-600">Position: {img.position}</p>

@@ -290,6 +290,11 @@ export function Ticker() {
 
         const loadAspect = (url: string) =>
           new Promise<number>((resolve) => {
+            // avoid attempting to load session-scoped or data URLs in the browser
+            if (!url || typeof url !== "string" || url.startsWith("blob:") || url.startsWith("data:")) {
+              resolve(16 / 9)
+              return
+            }
             const img = new window.Image()
             img.onload = () => {
               const aspect = img.naturalWidth / Math.max(img.naturalHeight, 1)
@@ -302,14 +307,15 @@ export function Ticker() {
         // gather promises for all images
         const promises: Promise<void>[] = []
 
-        galleryImages.forEach((img) => {
+          galleryImages.forEach((img) => {
           const rowKey = `row${img.row_number}`
           if (!processedImages[rowKey]) processedImages[rowKey] = []
 
           const p = loadAspect(img.image_url).then((aspect) => {
+            const src = typeof img.image_url === "string" && (img.image_url.startsWith("blob:") || img.image_url.startsWith("data:")) ? "" : img.image_url
             processedImages[rowKey].push({
               id: img.id,
-              url: img.image_url,
+              url: src,
               aspect,
             })
           })

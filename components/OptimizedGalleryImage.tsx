@@ -39,7 +39,7 @@ export function OptimizedGalleryImage({
 
   return (
     <Image
-      src={src}
+      src={typeof src === "string" && (src.startsWith("blob:") || src.startsWith("data:")) ? "/placeholder.svg" : src}
       alt={alt}
       width={width}
       height={height}
