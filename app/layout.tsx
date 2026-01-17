@@ -20,6 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
     const name = portfolio?.name || "Riansyah Rizky"
     const title = portfolio?.title || portfolio?.career_name || "Portfolio"
+    const ogTitle = portfolio?.og_title || `${name} | ${title}`
     const description = portfolio?.og_description || portfolio?.bio || "Riansyah Rizky Curriculum Vitae - R&D Photography Videography System"
     const image = portfolio?.og_image_url || `https://${DEFAULT_HOST}/favicon.png`
 
@@ -32,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
       generator: "v0.app",
       metadataBase: new URL(`https://${DEFAULT_HOST}`),
       openGraph: {
-        title: `${name} | ${title}`,
+        title: ogTitle,
         description,
         type: "website",
         url: `https://${DEFAULT_HOST}`,
@@ -45,6 +46,11 @@ export async function generateMetadata(): Promise<Metadata> {
             alt: `${name} social image`,
           },
         ],
+      },
+      twitter: {
+        title: ogTitle,
+        card: "summary_large_image",
+        images: [image],
       },
       icons: {
         icon: [
