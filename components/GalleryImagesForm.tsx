@@ -40,6 +40,12 @@ export function GalleryImagesForm({ images, onRefresh }: GalleryImagesFormProps)
 
     setIsLoading(true)
     try {
+      // Block session-scoped object URLs from being saved
+      if (imageUrl.trim().startsWith("blob:")) {
+        setError("Blob/object URLs are not allowed. Use the original remote URL so the server can import and cache it.")
+        setIsLoading(false)
+        return
+      }
       if (editingId) {
         // update existing record
         const response = await fetch(`/api/gallery/${editingId}`, {
@@ -95,7 +101,10 @@ export function GalleryImagesForm({ images, onRefresh }: GalleryImagesFormProps)
           body: JSON.stringify(createBody),
         })
 
-        if (!createRes.ok) throw new Error("Failed to create gallery image")
+        if (!createRes.ok) {
+          const body = await createRes.json().catch(() => ({}))
+          throw new Error(body?.error || "Failed to create gallery image")
+        }
       }
 
       setRowNumber("1")

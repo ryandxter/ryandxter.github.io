@@ -50,7 +50,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
+    // Reject session-scoped object URLs which cannot be canonicalized
+    if (typeof image_url === "string" && image_url.startsWith("blob:")) {
+      return NextResponse.json({ error: "Blob/object URLs are not allowed. Use the original remote URL so the server can import and cache it." }, { status: 400 })
+    }
+
     const supabase = await createClient()
+
+    // If the provided URL points to a remote origin (not Supabase storage) we prefer importing via server upload flow.
+    // But to keep this endpoint minimal, we only reject `blob:` sources and accept other URLs (admin UI already calls import first).
     const { data, error } = await supabase.from("gallery_images").insert([{ row_number, image_url, position }]).select()
 
     if (error) {

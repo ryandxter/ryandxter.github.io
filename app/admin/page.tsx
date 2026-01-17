@@ -16,7 +16,6 @@ import { PasswordModal } from "@/components/PasswordModal"
 import { useAdminSession } from "@/hooks/useAdminSession"
 import { getAdminSession } from "@/lib/admin-session"
 import { setAdminSession } from "@/lib/admin-session"
-import { galleryImageCache } from "@/lib/gallery-cache"
 
 interface Experience {
   id: string
@@ -99,29 +98,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleForceCleanup = async () => {
-    if (!confirm("Force remove blob/duplicate gallery entries? This will delete rows from the DB.")) return
-    try {
-      const token = getAdminSession()
-      const res = await fetch('/api/admin/gallery/cleanup', { method: 'POST', headers: { 'x-admin-session': token || '' } })
-      if (res.status === 401) {
-        setAuthError('Session expired or invalid. Please re-authenticate.')
-        setShowPasswordModal(true)
-        logout()
-        return
-      }
-      const body = await res.json()
-      if (!res.ok) throw new Error(body?.error || 'Cleanup failed')
-
-      // Clear client-side cache and refresh gallery list
-      try { galleryImageCache.clear() } catch {}
-      try { localStorage.removeItem('galleryCache') } catch {}
-      await fetchGalleryImages()
-      alert(`Cleanup complete. Deleted ${body.deletedCount || 0} rows.`)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Cleanup failed')
-    }
-  }
+  
 
   const handlePasswordSubmit = (token: string) => {
     const expiresAt = Date.now() + 2 * 60 * 1000
@@ -284,11 +261,6 @@ export default function AdminDashboard() {
                   <p className="text-center py-4">Loading gallery images...</p>
                 ) : (
                   <>
-                    <div className="mb-4">
-                      <button className="text-sm text-red-600 underline" onClick={handleForceCleanup}>
-                        Force remove blob/duplicate gallery entries
-                      </button>
-                    </div>
                     <GalleryImagesForm images={galleryImages} onRefresh={fetchGalleryImages} />
                   </>
                 )}
