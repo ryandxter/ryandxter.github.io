@@ -40,20 +40,63 @@ export function GalleryImagesForm({ images, onRefresh }: GalleryImagesFormProps)
 
     setIsLoading(true)
     try {
-      const method = editingId ? "PUT" : "POST"
-      const url = editingId ? `/api/gallery/${editingId}` : "/api/gallery"
+      if (editingId) {
+        // update existing record
+        const response = await fetch(`/api/gallery/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ row_number: Number.parseInt(rowNumber), image_url: imageUrl, position: Number.parseInt(position) }),
+        })
+        if (!response.ok) throw new Error("Failed to update image")
+      } else {
+        // For new images: attempt server-side import (fetch + upload) to canonicalize and cache
+        let publicUrl: string | null = null
 
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        try {
+          const importRes = await fetch("/api/uploads/gallery/import", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: [{ url: imageUrl, row_number: Number.parseInt(rowNumber), position: Number.parseInt(position) }] }),
+          })
+
+          if (!importRes.ok) {
+            throw new Error("Import failed")
+          }
+
+          const importBody = await importRes.json()
+          const first = Array.isArray(importBody?.results) ? importBody.results[0] : null
+          if (first && first.ok && first.publicUrl) {
+            publicUrl = first.publicUrl
+            // If server already inserted a record, we're done
+            if (first.record) {
+              // refresh list
+              setRowNumber("1")
+              setImageUrl("")
+              setPosition("0")
+              await onRefresh()
+              return
+            }
+          }
+        } catch (importErr) {
+          // fallthrough to create-by-URL path
+          console.warn("Import endpoint failed, falling back to direct create:", importErr)
+        }
+
+        // If import did not yield a publicUrl, or didn't insert, create gallery row using publicUrl or original URL
+        const createBody = {
           row_number: Number.parseInt(rowNumber),
-          image_url: imageUrl,
+          image_url: publicUrl ?? imageUrl,
           position: Number.parseInt(position),
-        }),
-      })
+        }
 
-      if (!response.ok) throw new Error("Failed to save image")
+        const createRes = await fetch("/api/gallery", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(createBody),
+        })
+
+        if (!createRes.ok) throw new Error("Failed to create gallery image")
+      }
 
       setRowNumber("1")
       setImageUrl("")
