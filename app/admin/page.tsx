@@ -98,7 +98,36 @@ export default function AdminDashboard() {
     }
   }
 
-  
+  const handleMigrateGallery = async () => {
+    try {
+      setIsLoadingGallery(true)
+      const token = getAdminSession()
+      const response = await fetch("/api/admin/migrate-gallery-to-storage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-session": token || "" },
+      })
+
+      if (response.status === 401) {
+        setAuthError("Session expired or invalid. Please re-authenticate.")
+        setShowPasswordModal(true)
+        logout()
+        throw new Error("Unauthorized")
+      }
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}))
+        throw new Error(body?.error || "Migration failed")
+      }
+
+      const result = await response.json()
+      setError(`Migration complete: ${result.summary.success} success, ${result.summary.failed} failed`)
+      await fetchGalleryImages()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Migration failed")
+    } finally {
+      setIsLoadingGallery(false)
+    }
+  }
 
   const handlePasswordSubmit = (token: string) => {
     const expiresAt = Date.now() + 2 * 60 * 1000
@@ -261,6 +290,16 @@ export default function AdminDashboard() {
                   <p className="text-center py-4">Loading gallery images...</p>
                 ) : (
                   <>
+                    <div className="mb-6">
+                      <Button
+                        variant="outline"
+                        onClick={handleMigrateGallery}
+                        disabled={isLoadingGallery}
+                        className="w-full"
+                      >
+                        Migrate All Gallery to Storage
+                      </Button>
+                    </div>
                     <GalleryImagesForm images={galleryImages} onRefresh={fetchGalleryImages} />
                   </>
                 )}
