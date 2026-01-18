@@ -10,7 +10,10 @@ async function getServiceClient() {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
   }
 
-  return createSupabaseClient(SUPABASE_URL, SERVICE_KEY)
+  return {
+    client: createSupabaseClient(SUPABASE_URL, SERVICE_KEY),
+    url: SUPABASE_URL,
+  }
 }
 
 interface MigrationResult {
@@ -35,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     const server = await createClient()
-    const sa = await getServiceClient()
+    const { client: sa, url: SUPABASE_URL } = await getServiceClient()
     const bucket = sa.storage.from("gallery")
 
     // Fetch all gallery images
