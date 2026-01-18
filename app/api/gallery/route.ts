@@ -1,8 +1,11 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const url = new URL(request.url)
+    const noCache = url.searchParams.get("nocache") === "1"
+
     const supabase = await createClient()
     const { data, error } = await supabase
       .from("gallery_images")
@@ -25,12 +28,19 @@ export async function GET() {
 
     const removedCount = (data || []).length - sanitized.length
 
-    // Return with aggressive caching for gallery data
-    const headers: Record<string, string> = {
-      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
-      "CDN-Cache-Control": "max-age=3600",
-      "Expires": new Date(Date.now() + 3600000).toUTCString(),
-    }
+    // Return with caching (or no-cache for admin refresh)
+    const headers: Record<string, string> = noCache
+      ? {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        }
+      : {
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=3600",
+          "CDN-Cache-Control": "max-age=60",
+          Expires: new Date(Date.now() + 60000).toUTCString(),
+        }
+
     if (removedCount > 0) {
       headers["X-Removed-Blob-Count"] = String(removedCount)
     }

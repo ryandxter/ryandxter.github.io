@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Trash2, Edit2 } from "lucide-react"
+import { Trash2, Edit2, Download } from "lucide-react"
 import Image from "next/image"
 
 interface GalleryImage {
@@ -28,6 +28,10 @@ export function GalleryImagesForm({ images, onRefresh }: GalleryImagesFormProps)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [showFetchModal, setShowFetchModal] = useState(false)
+  const [fetchUrls, setFetchUrls] = useState("")
+  const [fetchRowNumber, setFetchRowNumber] = useState("1")
+  const [isFetching, setIsFetching] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -120,7 +124,65 @@ export function GalleryImagesForm({ images, onRefresh }: GalleryImagesFormProps)
 
       await onRefresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete")
+      setError(err instanceof Error ? err.message : "Failed to delete image")
+    }
+  }
+
+  const handleFetchImages = async () => {
+    if (!fetchUrls.trim()) {
+      setError("Please enter at least one image URL")
+      return
+    }
+
+    setIsFetching(true)
+    setError(null)
+
+    try {
+      const urls = fetchUrls
+        .split("\n")
+        .map((url) => url.trim())
+        .filter((url) => url.length > 0)
+
+      if (urls.length === 0) {
+        setError("No valid URLs provided")
+        setIsFetching(false)
+        return
+      }
+
+      const items = urls.map((url, index) => ({
+        action: "create",
+        url,
+        row_number: Number.parseInt(fetchRowNumber),
+        position: index,
+      }))
+
+      const importRes = await fetch("/api/uploads/gallery/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      })
+
+      if (!importRes.ok) {
+        const body = await importRes.json().catch(() => ({}))
+        throw new Error(body?.error || "Failed to fetch and import images")
+      }
+
+      const result = await importRes.json()
+      const successCount = result?.results?.filter((r: any) => r.ok).length || 0
+      const failCount = result?.results?.filter((r: any) => !r.ok).length || 0
+
+      setShowFetchModal(false)
+      setFetchUrls("")
+      setFetchRowNumber("1")
+      await onRefresh()
+
+      if (failCount > 0) {
+        setError(`Imported ${successCount} images, ${failCount} failed`)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch images")
+    } finally {
+      setIsFetching(false)
     }
   }
 
@@ -142,6 +204,19 @@ export function GalleryImagesForm({ images, onRefresh }: GalleryImagesFormProps)
           <CardTitle className="text-lg">{editingId ? "Edit" : "Add"} Gallery Image</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="flex gap-2 mb-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowFetchModal(true)}
+              disabled={isLoading || isFetching}
+              className="w-full"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Fetch Images from URLs
+            </Button>
+          </div>
+
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
@@ -257,6 +332,70 @@ export function GalleryImagesForm({ images, onRefresh }: GalleryImagesFormProps)
           )}
         </CardContent>
       </Card>
+
+      {/* Fetch Images Modal */}
+      {showFetchModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl mx-4">
+            <CardHeader>
+              <CardTitle>Fetch Images from URLs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  handleFetchImages()
+                }}
+                className="flex flex-col gap-4"
+              >
+                <div>
+                  <label htmlFor="fetchUrls" className="block text-sm font-medium mb-2">
+                    Image URLs (one per line)
+                  </label>
+                  <textarea
+                    id="fetchUrls"
+                    value={fetchUrls}
+                    onChange={(e) => setFetchUrls(e.target.value)}
+                    placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+                    className="w-full min-h-[200px] p-3 border rounded-md"
+                    disabled={isFetching}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="fetchRowNumber" className="block text-sm font-medium mb-2">
+                    Row Number
+                  </label>
+                  <Input
+                    id="fetchRowNumber"
+                    type="text"
+                    value={fetchRowNumber}
+                    onChange={(e) => setFetchRowNumber(e.target.value)}
+                    placeholder="1"
+                    disabled={isFetching}
+                  />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowFetchModal(false)
+                      setFetchUrls("")
+                      setFetchRowNumber("1")
+                    }}
+                    disabled={isFetching}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isFetching || !fetchUrls.trim()}>
+                    {isFetching ? "Fetching..." : "Fetch Images"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

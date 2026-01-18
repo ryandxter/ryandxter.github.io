@@ -86,7 +86,7 @@ export default function AdminDashboard() {
   const fetchGalleryImages = async () => {
     try {
       setIsLoadingGallery(true)
-      const response = await fetch("/api/gallery")
+      const response = await fetch("/api/gallery?nocache=1")
       if (response.ok) {
         const data = await response.json()
         setGalleryImages(data)
